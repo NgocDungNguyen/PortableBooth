@@ -1,4 +1,4 @@
-import { Blend, CircleDot, Cloud, Contrast, Droplet, Grip, Sparkles, Sun, Thermometer, RotateCcw } from 'lucide-react';
+import { Blend, CircleDot, Cloud, Contrast, Droplet, Grip, Shuffle, Sparkles, Sun, Thermometer, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { DEFAULT_ADJUST, MAX_OVERLAYS } from '../../film/doc';
 import { FILTER_FAMILIES, FILTERS } from '../../film/filters';
@@ -6,6 +6,7 @@ import type { AdjustParams } from '../../film/types';
 import { getPhoto } from '../../media/photos';
 import { drawOverlay, OVERLAYS } from '../../render/overlays';
 import { renderFilterThumb } from '../../render/compose';
+import { FRAME_STYLES } from '../../render/frames';
 import { sceneCanvas } from '../../samples';
 import { useStudio } from '../../state/studio';
 import { Slider } from '../Slider';
@@ -65,20 +66,38 @@ export function LooksPanel() {
         : { ...d, filterId: id, slots: d.slots.map((s) => ({ ...s, filterId: null })) },
     );
 
+  const surprise = () => {
+    const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
+    apply((d) => ({
+      ...d,
+      filterId: pick(FILTERS.filter((f) => f.id !== 'original')).id,
+      slots: d.slots.map((s) => ({ ...s, filterId: null })),
+      frameStyle: pick(FRAME_STYLES.filter((f) => f.id !== 'noise-film' || d.format === 'film35')).id,
+      overlays: Math.random() < 0.6 ? [{ id: pick(OVERLAYS).id, opacity: 0.6 }] : [],
+    }));
+  };
+
   return (
     <div className="flex flex-col gap-3">
-      <Seg label="Looks" value={sub} onChange={setSub} options={[{ id: 'filters', label: 'Filters' }, { id: 'adjust', label: 'Adjust' }, { id: 'overlays', label: 'Overlays' }]} />
+      <div className="sticky top-0 z-10 -mx-4 -mt-3 flex flex-col gap-2 bg-surface px-4 pb-2 pt-3">
+      <div className="flex items-center gap-2">
+        <Seg label="Looks" value={sub} onChange={setSub} options={[{ id: 'filters', label: 'Filters' }, { id: 'adjust', label: 'Adjust' }, { id: 'overlays', label: 'Overlays' }]} />
+        <button className="btn btn-icon" onClick={surprise} aria-label="Surprise me" title="Surprise me"><Shuffle size={18} aria-hidden /></button>
+      </div>
       {sub === 'filters' && (
         <>
-          <div className="flex items-center gap-2">
-            <Seg label="Apply to" value={effScope} onChange={setScope} options={[{ id: 'all', label: 'All photos' }, { id: 'one', label: slotIdx !== null ? `Photo ${slotIdx + 1}` : 'One photo' }]} />
-          </div>
-          {effScope === 'all' && scope === 'one' && <p className="label">Select a photo on the film first.</p>}
+          <Seg label="Apply to" value={effScope} onChange={setScope} options={[{ id: 'all', label: 'All photos' }, { id: 'one', label: slotIdx !== null ? `Photo ${slotIdx + 1}` : 'One photo' }]} />
           <div role="radiogroup" aria-label="Filter family" className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1">
             {[{ id: 'all', label: 'All' }, ...FILTER_FAMILIES].map((f) => (
               <button key={f.id} role="radio" aria-checked={family === f.id} className="chip" onClick={() => setFamily(f.id)}>{f.label}</button>
             ))}
           </div>
+        </>
+      )}
+      </div>
+      {sub === 'filters' && (
+        <>
+          {effScope === 'all' && scope === 'one' && <p className="label">Select a photo on the film first.</p>}
           <div role="radiogroup" aria-label="Filter" className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-3">
             {list.map((f) => (
               <button key={f.id} role="radio" aria-checked={current === f.id} aria-label={f.name} onClick={() => setFilter(f.id)} className="tile flex-col !place-items-stretch">
@@ -87,6 +106,7 @@ export function LooksPanel() {
               </button>
             ))}
           </div>
+          <Slider label="Strength" icon={<Blend size={15} aria-hidden />} value={doc.adjust.intensity} min={0} max={1} onChange={(v) => apply((d) => ({ ...d, adjust: { ...d.adjust, intensity: v } }), 'adj-intensity')} format={(v) => `${Math.round(v * 100)}`} />
         </>
       )}
       {sub === 'adjust' && (

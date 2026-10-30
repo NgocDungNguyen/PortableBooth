@@ -126,11 +126,11 @@ export function Home({ onStart }: Props) {
 
       <section aria-labelledby="looks" className="py-10">
         <h2 id="looks" className="mx-auto mb-5 max-w-6xl px-5 text-2xl font-semibold">Start from a look</h2>
-        <div className="marquee-wrap no-scrollbar overflow-x-auto py-3">
-          <ul className="marquee flex gap-5 px-5" aria-label="Looks you can start from">
-            {[...GALLERY, ...GALLERY].map((l, i) => (
-              <li key={i} aria-hidden={i >= GALLERY.length}>
-                <button onClick={() => onStart({ format: l.format, frames: l.frames, filterId: l.filter })} tabIndex={i >= GALLERY.length ? -1 : 0} aria-label={`Start with ${l.name}`} className="stage-bg group flex h-[17rem] w-[11rem] flex-col items-center justify-center gap-3 rounded-2xl border border-line transition-transform hover:-translate-y-1">
+        <div className="no-scrollbar overflow-x-auto py-3">
+          <ul className="mx-auto flex w-max snap-x gap-5 px-5" aria-label="Looks you can start from">
+            {GALLERY.map((l, i) => (
+              <li key={i} className="snap-start">
+                <button onClick={() => onStart({ format: l.format, frames: l.frames, filterId: l.filter })} aria-label={`Start with ${l.name}`} className="stage-bg group flex h-[17rem] w-[11rem] flex-col items-center justify-center gap-3 rounded-2xl border border-line transition-transform hover:-translate-y-1">
                   <FilmCanvas doc={l.frame ? { ...previewDoc(l.format, l.frames, l.filter, l.offset), frameStyle: l.frame } : previewDoc(l.format, l.frames, l.filter, l.offset)} width={l.format === 'film35' ? 58 : l.format === 'instant' ? 100 : 56} label={l.name} />
                   <span className="text-xs font-semibold text-muted group-hover:text-text">{l.name}</span>
                 </button>

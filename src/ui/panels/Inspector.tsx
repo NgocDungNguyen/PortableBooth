@@ -7,7 +7,7 @@ import { WIDGETS } from '../../render/widgets';
 import { useStudio } from '../../state/studio';
 import { useIntake } from '../intake';
 import { Slider } from '../Slider';
-import { Section, Seg, Swatches } from './common';
+import { Collapse, Section, Seg, Swatches } from './common';
 
 const BLENDS: { id: Blend; label: string }[] = [{ id: 'normal', label: 'Normal' }, { id: 'multiply', label: 'Multiply' }, { id: 'screen', label: 'Screen' }, { id: 'overlay', label: 'Overlay' }];
 
@@ -27,7 +27,7 @@ export function ItemInspector({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col">
-      <div className="mb-2 flex items-center gap-1">
+      <div className="sticky top-0 z-10 -mx-4 -mt-3 mb-1 flex items-center gap-1 bg-surface px-4 pb-2 pt-3">
         <button className="btn btn-ghost btn-sm !px-2" onClick={() => setSelection(null)} aria-label="Done editing">
           <ChevronLeft size={18} aria-hidden /> Done
         </button>
@@ -42,7 +42,7 @@ export function ItemInspector({ id }: { id: string }) {
       </div>
 
       <Section title="Transform">
-        <Slider label="Size" value={it.size} min={3} max={it.kind === 'text' ? 24 : 70} step={0.1} onChange={(v) => patch({ size: v }, 'size')} format={(v) => v.toFixed(1)} />
+        <Slider label="Size" value={it.size} min={3} max={it.kind === 'text' ? 24 : 70} step={0.1} onChange={(v) => patch({ size: v }, 'size')} format={(v) => `${Math.round(v)} mm`} />
         <Slider label="Rotate" value={it.rot} min={-180} max={180} step={1} onChange={(v) => patch({ rot: v }, 'rot')} format={(v) => `${Math.round(v)}°`} />
         <Slider label="Opacity" value={it.opacity} min={0.05} max={1} onChange={(v) => patch({ opacity: v }, 'op')} />
       </Section>
@@ -60,12 +60,12 @@ export function ItemInspector({ id }: { id: string }) {
         </Section>
       )}
       {it.kind === 'sticker' && (
-        <Section title="Crop">
+        <Collapse title="Crop">
           {(['l', 't', 'r', 'b'] as const).map((k) => (
             <Slider key={k} label={{ l: 'Left', t: 'Top', r: 'Right', b: 'Bottom' }[k]} value={it.crop[k]} min={0} max={0.8} onChange={(v) => patch({ crop: { ...it.crop, [k]: v } } as Partial<StickerItem>, `crop-${k}`)} />
           ))}
           <button className="btn btn-sm self-start" onClick={() => patch({ crop: { l: 0, t: 0, r: 0, b: 0 } } as Partial<StickerItem>)}><RotateCcw size={16} aria-hidden /> Reset crop</button>
-        </Section>
+        </Collapse>
       )}
 
       <Section title="Style">
@@ -76,11 +76,13 @@ export function ItemInspector({ id }: { id: string }) {
         {it.outline && (
           <>
             <Swatches label="Outline colour" colors={TINT_COLORS} value={it.outline.color} onChange={(c) => c && patch({ outline: { ...it.outline!, color: c } })} />
-            <Slider label="Width" value={it.outline.width} min={0.1} max={2.5} step={0.05} onChange={(v) => patch({ outline: { ...it.outline!, width: v } }, 'ow')} format={(v) => v.toFixed(1)} />
+            <Slider label="Width" value={it.outline.width} min={0.1} max={2.5} step={0.05} onChange={(v) => patch({ outline: { ...it.outline!, width: v } }, 'ow')} format={(v) => `${v.toFixed(1)} mm`} />
           </>
         )}
-        <Seg label="Blend" value={it.blend} onChange={(b) => patch({ blend: b })} options={BLENDS} />
       </Section>
+      <Collapse title="Blend">
+        <Seg label="Blend" value={it.blend} onChange={(b) => patch({ blend: b })} options={BLENDS} />
+      </Collapse>
     </div>
   );
 }

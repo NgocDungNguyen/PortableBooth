@@ -1,4 +1,4 @@
-import { Camera, ImageOff, Upload } from 'lucide-react';
+import { Camera, ImageOff, ImagePlus, Upload } from 'lucide-react';
 import { filledCount } from '../../film/doc';
 import { getPhoto } from '../../media/photos';
 import { useStudio } from '../../state/studio';
@@ -39,7 +39,7 @@ export function PhotosPanel() {
           {doc.slots.map((s, i) => (
             <div key={i} className="relative">
               <button role="radio" aria-checked={selection?.type === 'slot' && selection.index === i} aria-label={`Photo ${i + 1}${s.photoId ? '' : ' (empty)'}`} className="tile aspect-square w-full" onClick={() => setSelection({ type: 'slot', index: i })}>
-                {s.photoId ? <SlotThumb photoId={s.photoId} /> : <span className="num text-lg text-muted">{i + 1}</span>}
+                {s.photoId ? <SlotThumb photoId={s.photoId} /> : <span className="flex flex-col items-center gap-0.5 text-muted"><ImagePlus size={18} aria-hidden /><span className="text-[0.7rem] font-semibold">Slot {i + 1}</span></span>}
               </button>
               {s.photoId && (
                 <button className="btn btn-icon btn-ghost absolute -right-1 -top-1 !min-h-8 !min-w-8 rounded-full bg-bg/80" aria-label={`Remove photo ${i + 1}`} onClick={() => apply((d) => ({ ...d, slots: d.slots.map((x, k) => (k === i ? { ...x, photoId: null, zoom: 1, ox: 0, oy: 0 } : x)) }))}>

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Camera, Download, Film, Frame, Home, Layers, Redo2, ShieldX, Smile, Sparkles, Type, Undo2 } from 'lucide-react';
-import { useState } from 'react';
+import { Camera, ChevronDown, ChevronUp, Download, Film, Frame, Home, Layers, Redo2, ShieldX, Smile, Sparkles, Type, Undo2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { filledCount, isComplete } from '../film/doc';
 import { useStudio, type Tool } from '../state/studio';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -42,11 +42,18 @@ function StudioInner() {
   const { doc, tool, setTool, selection, setSelection, undo, redo, canUndo, canRedo, clearAll, setExportOpen } = useStudio();
   const reduce = useReducedMotion();
   const [confirm, setConfirm] = useState(false);
+  const [dockOpen, setDockOpen] = useState(true);
+  const scroller = useRef<HTMLDivElement>(null);
   const complete = isComplete(doc);
   const left = doc.slots.length - filledCount(doc);
   // an element or photo takes over the panel (the Looks tool keeps it so a filter can be set per photo)
   const showInspector = selection?.type === 'item' || (selection?.type === 'slot' && tool !== 'looks');
   const bodyKey = showInspector && selection ? `i-${selection.type}-${selection.type === 'item' ? selection.id : selection.index}` : tool;
+
+  // every new tool / inspector starts at the top, never mid-scroll
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: 0 });
+  }, [bodyKey]);
 
   return (
     <div className="flex h-dvh flex-col bg-bg">
@@ -57,8 +64,9 @@ function StudioInner() {
         <button className="btn btn-icon btn-ghost" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo"><Undo2 size={20} aria-hidden /></button>
         <button className="btn btn-icon btn-ghost" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo"><Redo2 size={20} aria-hidden /></button>
         <button className="btn btn-icon btn-ghost" onClick={() => setConfirm(true)} aria-label="Clear everything" title="Clear everything"><ShieldX size={20} aria-hidden /></button>
-        <button className="btn btn-primary ml-1" onClick={() => setExportOpen(true)} disabled={!complete} aria-label={complete ? 'Export' : `Export (${left} photo${left === 1 ? '' : 's'} left to add)`}>
-          <Download size={18} aria-hidden /> {complete ? 'Export' : <span className="num">{left} left</span>}
+        {!complete && <span className="num mr-1 text-xs text-muted" aria-label={`${left} photo${left === 1 ? '' : 's'} still to add`}>{filledCount(doc)}/{doc.slots.length}</span>}
+        <button className="btn btn-primary ml-1" onClick={() => setExportOpen(true)} disabled={!complete} aria-label={complete ? 'Export' : `Export (add ${left} more photo${left === 1 ? '' : 's'} first)`}>
+          <Download size={18} aria-hidden /> Export
         </button>
       </header>
 
@@ -66,8 +74,9 @@ function StudioInner() {
         <div className="stage-bg relative min-h-0 flex-1 p-4 md:p-8">
           <Stage />
         </div>
-        <aside className="flex h-[46dvh] shrink-0 flex-col border-t border-line bg-surface md:h-auto md:w-[26rem] md:border-l md:border-t-0" aria-label="Tools">
-          <div role="tablist" aria-label="Tools" className="no-scrollbar flex shrink-0 gap-0 overflow-x-auto border-b border-line px-1 py-1.5">
+        <aside className={`flex shrink-0 flex-col border-t border-line bg-surface transition-[height] duration-200 md:h-auto md:w-[26rem] md:border-l md:border-t-0 ${dockOpen ? (showInspector ? 'h-[58dvh]' : 'h-[46dvh]') : 'h-auto'}`} aria-label="Tools">
+          <div className="flex shrink-0 items-center border-b border-line px-1 py-1.5">
+          <div role="tablist" aria-label="Tools" className="no-scrollbar flex min-w-0 flex-1 gap-0 overflow-x-auto">
             {TOOLS.map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -75,6 +84,7 @@ function StudioInner() {
                 aria-selected={tool === id && !showInspector}
                 aria-controls="tool-body"
                 onClick={() => {
+                  setDockOpen(true);
                   setTool(id);
                   if (selection?.type === 'item' || (selection?.type === 'slot' && id !== 'looks')) setSelection(null);
                 }}
@@ -85,7 +95,11 @@ function StudioInner() {
               </button>
             ))}
           </div>
-          <div id="tool-body" role="tabpanel" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+          <button className="btn btn-icon btn-ghost ml-1 shrink-0 md:hidden" onClick={() => setDockOpen((o) => !o)} aria-expanded={dockOpen} aria-label={dockOpen ? 'Collapse tools' : 'Expand tools'}>
+              {dockOpen ? <ChevronDown size={20} aria-hidden /> : <ChevronUp size={20} aria-hidden />}
+          </button>
+        </div>
+          <div ref={scroller} id="tool-body" role="tabpanel" className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 ${dockOpen ? '' : 'hidden md:block'}`}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={bodyKey} initial={{ opacity: 0, y: reduce ? 0 : 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
                 {showInspector && selection?.type === 'item' ? <ItemInspector id={selection.id} /> : showInspector && selection?.type === 'slot' ? <SlotInspector index={selection.index} /> : <ToolBody tool={tool} />}

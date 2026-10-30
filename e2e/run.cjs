@@ -65,13 +65,26 @@ const panel = (page) => page.locator('#tool-body');
   const svgBad = path.join(SHOTS, 'evil.svg'); fs.writeFileSync(svgBad, '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
   const junk = path.join(SHOTS, 'junk.png'); fs.writeFileSync(junk, 'not an image');
 
+  // ---- a look card on the homepage starts the studio with that film + filter
+  await page.getByRole('button', { name: 'Start with Noir' }).first().click();
+  await page.waitForSelector('[role=tablist][aria-label=Tools]');
+  await page.getByRole('tab', { name: 'Film' }).click();
+  ok((await page.getByRole('radio', { name: /35mm/ }).getAttribute('aria-checked')) === 'true', 'home: look card opens the studio with that film format');
+  await page.getByRole('tab', { name: 'Looks' }).click();
+  ok((await panel(page).getByRole('radio', { name: 'Noir', exact: true }).getAttribute('aria-checked')) === 'true', 'home: look card applies its filter');
+  await page.goto(BASE + '/#home');
+  await page.waitForTimeout(400);
+
   // ---- studio: empty state
   await page.getByRole('button', { name: 'Start', exact: true }).first().click();
   await page.waitForSelector('[role=tablist][aria-label=Tools]');
   await page.waitForTimeout(800);
+  await page.getByRole('tab', { name: 'Film' }).click();
+  await page.getByRole('radio', { name: /Strip/ }).click();
+  await page.getByRole('tab', { name: 'Photos' }).click();
   await page.screenshot({ path: `${SHOTS}/03-studio-empty.png` });
   await axe(page, 'studio (empty)');
-  ok(await page.getByRole('button', { name: /Export \(4 photos left/ }).isDisabled(), 'export is disabled until every slot has a photo');
+  ok(await page.getByRole('button', { name: /Export \(add 4 more/ }).isDisabled(), 'export is disabled until every slot has a photo');
 
   // film tool
   await page.getByRole('tab', { name: 'Film' }).click();
@@ -90,7 +103,7 @@ const panel = (page) => page.locator('#tool-body');
   ok((await page.getByText(/open that photo|Only photos/).count()) > 0, 'upload: junk rejected');
   await fileInput.setInputFiles(imgs.slice(0, 2));
   await page.waitForTimeout(800);
-  ok((await page.getByRole('button', { name: /Export \(2 photos left/ }).count()) === 1, 'upload: 2 of 4 slots filled');
+  ok((await page.getByRole('button', { name: /Export \(add 2 more/ }).count()) === 1, 'upload: 2 of 4 slots filled');
 
   // ---- camera fills the rest
   await panel(page).getByRole('button', { name: 'Camera', exact: true }).click();
@@ -161,6 +174,7 @@ const panel = (page) => page.locator('#tool-body');
   await page.getByRole('radio', { name: 'Shapes' }).click();
   await page.waitForTimeout(300);
   await panel(page).locator('button[aria-label^="Add "]').nth(5).click();
+  await panel(page).locator('summary', { hasText: 'Blend' }).click();
   await panel(page).getByRole('radio', { name: 'Multiply' }).click();
   await page.getByRole('button', { name: 'Done editing' }).click();
   await page.getByRole('tab', { name: 'Add' }).click();

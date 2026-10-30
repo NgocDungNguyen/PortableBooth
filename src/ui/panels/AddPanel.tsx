@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { newSticker, newWidget } from '../../film/doc';
-import { ensureSticker, FAMILIES, isMonoSticker, packEntries, packsOf, type Family } from '../../assets/library';
+import { ensureSticker, isMonoSticker, packEntries, packsOf, type Family } from '../../assets/library';
 import { drawWidget, WIDGETS } from '../../render/widgets';
 import { useStudio } from '../../state/studio';
 import { Seg, useCanvas, useDropPoint } from './common';
@@ -62,7 +62,7 @@ export function AddPanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Seg label="Library" value={tab} onChange={setTab} options={[...FAMILIES.map((f) => ({ id: f.id as Tab, label: f.label })), { id: 'widgets' as Tab, label: 'Widgets' }]} />
+      <Seg label="Library" value={tab} onChange={setTab} options={[{ id: 'icons' as Tab, label: 'Icons' }, { id: 'shapes' as Tab, label: 'Shapes' }, { id: 'widgets' as Tab, label: 'Widgets' }, { id: 'emoji' as Tab, label: 'Emoji' }]} />
       {tab === 'widgets' ? (
         <div className="grid grid-cols-2 gap-2">
           {WIDGETS.map((w) => (

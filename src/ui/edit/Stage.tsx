@@ -1,5 +1,5 @@
-import { Camera, ImagePlus } from 'lucide-react';
-import { useRef } from 'react';
+import { Camera, Plus, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { computeLayout } from '../../film/layout';
 import type { FilmDoc, Item } from '../../film/types';
 import { getPhoto } from '../../media/photos';
@@ -37,6 +37,7 @@ export function Stage() {
   const drag = useRef<Drag>(null);
   const scale = useRef(1);
   const root = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState<number | null>(null);
 
   const toMm = (clientX: number, clientY: number) => {
     const r = root.current!.getBoundingClientRect();
@@ -46,6 +47,7 @@ export function Stage() {
   const down = (e: React.PointerEvent<HTMLDivElement>) => {
     const p = toMm(e.clientX, e.clientY);
     const it = hitItem(doc, p.x, p.y);
+    setMenu(null);
     e.currentTarget.setPointerCapture(e.pointerId);
     if (it) {
       setSelection({ type: 'item', id: it.id });
@@ -173,15 +175,18 @@ export function Stage() {
               return (
                 <div key={i} className="pointer-events-none absolute" style={{ left: s.x * pxPerMm, top: s.y * pxPerMm, width: s.w * pxPerMm, height: s.h * pxPerMm, borderRadius: layout.slotRadius * pxPerMm }}>
                   {selected && <div className="absolute inset-0 rounded-[inherit] border-2 border-accent" style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.5)' }} />}
-                  {(!filled || selected) && (
+                  {!filled && (
                     <div className="absolute inset-0 grid place-items-center">
-                      <div className="pointer-events-auto flex gap-2 rounded-xl border border-line2 bg-bg/80 p-1.5 backdrop-blur" onPointerDown={stop}>
-                        <button className="btn btn-icon btn-ghost" aria-label={filled ? `Retake photo ${i + 1} with camera` : `Take photo ${i + 1} with camera`} onClick={() => { setTool('photos'); intake.camera(i); }}>
-                          <Camera size={20} aria-hidden />
+                      <div className="pointer-events-auto relative" onPointerDown={stop}>
+                        <button className="grid size-11 place-items-center rounded-full border border-line2 bg-bg/70 text-text backdrop-blur transition-transform hover:scale-105" aria-haspopup="menu" aria-expanded={menu === i} aria-label={`Add photo ${i + 1}`} onClick={() => setMenu(menu === i ? null : i)}>
+                          <Plus size={20} aria-hidden />
                         </button>
-                        <button className="btn btn-icon btn-ghost" aria-label={filled ? `Replace photo ${i + 1} from file` : `Upload photo ${i + 1}`} onClick={() => intake.pick(i)}>
-                          <ImagePlus size={20} aria-hidden />
-                        </button>
+                        {menu === i && (
+                          <div role="menu" className="absolute left-1/2 top-full z-20 mt-2 flex -translate-x-1/2 flex-col gap-1 rounded-xl border border-line2 bg-surface p-1 shadow-[var(--shadow)]">
+                            <button role="menuitem" className="btn btn-ghost justify-start" onClick={() => { setMenu(null); setTool('photos'); intake.camera(i); }}><Camera size={18} aria-hidden /> Camera</button>
+                            <button role="menuitem" className="btn btn-ghost justify-start" onClick={() => { setMenu(null); intake.pick(i); }}><Upload size={18} aria-hidden /> Upload</button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -203,7 +208,7 @@ export function Stage() {
                       className="pointer-events-auto absolute grid size-11 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize place-items-center touch-none"
                       style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
                     >
-                      <span className="size-3 rounded-[3px] border-2 border-accent bg-bg" />
+                      <span className="size-4 rounded-[4px] border-2 border-accent bg-bg shadow md:size-3" />
                     </span>
                   ))}
                 {!sel.locked && (
@@ -215,7 +220,7 @@ export function Stage() {
                       className="pointer-events-auto absolute left-1/2 grid size-11 -translate-x-1/2 cursor-grab place-items-center touch-none"
                       style={{ top: -52 }}
                     >
-                      <span className="size-3.5 rounded-full border-2 border-accent bg-bg" />
+                      <span className="size-4 rounded-full border-2 border-accent bg-bg shadow" />
                     </span>
                   </>
                 )}

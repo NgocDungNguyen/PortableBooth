@@ -16,6 +16,18 @@ export function Section({ title, children, aside }: { title?: string; children: 
   );
 }
 
+export function Collapse({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="group border-t border-line py-1">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-[0.8rem] font-semibold uppercase text-muted" style={{ letterSpacing: '0.06em' }}>
+        {title}
+        <span aria-hidden className="text-base transition-transform group-open:rotate-90">›</span>
+      </summary>
+      <div className="flex flex-col gap-2.5 pb-3">{children}</div>
+    </details>
+  );
+}
+
 export function Seg<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { id: T; label: string; icon?: ReactNode }[]; label: string }) {
   return (
     <div role="radiogroup" aria-label={label} className="seg w-full">
