@@ -2,11 +2,14 @@ import { AnimatePresence, motion } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { audio } from './audio';
 import type { FormatId } from './film/types';
+import { reshape, setOrientation } from './film/doc';
+import { parseLookHash } from './media/share';
 import { StudioProvider, useStudio } from './state/studio';
 import { About } from './ui/About';
 import { Home } from './ui/Home';
 import { Intro } from './ui/intro/Intro';
 import { routeMotion, useMotionOK } from './ui/motion';
+import { ReceiveFromHash } from './ui/share/Receive';
 import { Toast } from './ui/Toast';
 import { ThemeProvider } from './ui/ThemeToggle';
 
@@ -22,8 +25,17 @@ function Router() {
   const [route, setRoute] = useState<Route>(read);
   // The intro plays on every cold load of the home route (nothing is stored, so it cannot be remembered),
   // never on a #studio deep link. Home stays mounted underneath so its films render while the reel plays.
-  const [intro, setIntro] = useState(() => read() === 'home');
-  const { startFrom, doc, setTool } = useStudio();
+  // a shared look link (#look=…) opens the studio with that film; a nearby-send link (#beam=…) opens the receive sheet
+  const [intro, setIntro] = useState(() => read() === 'home' && !/^#(look|beam)=/.test(location.hash));
+  const { startFrom, doc, setTool, apply } = useStudio();
+
+  useEffect(() => {
+    const look = parseLookHash(location.hash);
+    if (!look) return;
+    apply((d) => ({ ...setOrientation(reshape(d, look.format, look.frames), look.orientation), filterId: look.filterId, frameStyle: look.frameStyle }));
+    setTool('film');
+    location.replace('#studio');
+  }, [apply, setTool]);
 
   useEffect(() => {
     const on = () => setRoute(read());
@@ -108,6 +120,7 @@ export function App() {
       <main id="main" tabIndex={-1} className="outline-none">
         <Router />
       </main>
+      <ReceiveFromHash />
       <Toast />
     </StudioProvider>
     </ThemeProvider>

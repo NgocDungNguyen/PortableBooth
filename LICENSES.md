@@ -41,3 +41,12 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 | Asset | Licence | Notes |
 | --- | --- | --- |
 | `src/assets/audio/*.m4a` (Golden Hour, Night Drive, Sunday Pop, intro score) | Original work of the project | Composed and synthesised from scratch by `scripts/music/compose.py` (sine / saw / noise maths, no samples or third-party audio) |
+
+## QR codes
+
+| Package | Licence | Use |
+| --- | --- | --- |
+| [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | MIT, Copyright (c) 2009 Kazuhiko Arase | Draws the share / nearby-send QR codes, locally |
+| [jsQR](https://github.com/cozmo/jsQR) | Apache License 2.0, Copyright (c) Cosmo Wolfe | Reads the reply QR in the in-app scanner (loaded only when the scanner opens) |
+
+The Apache-2.0 licence text is at https://www.apache.org/licenses/LICENSE-2.0 ; jsQR ships no NOTICE file.
