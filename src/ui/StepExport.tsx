@@ -27,12 +27,12 @@ export function StepExport() {
       if (mode === 'share') {
         const r = await shareBlob(out);
         if (r === 'unsupported') {
-          downloadBlob(out);
+          await downloadBlob(out);
           toast('Saved to your device');
         }
         if (r !== 'cancelled') setBurst((b) => b + 1);
       } else {
-        downloadBlob(out);
+        await downloadBlob(out);
         setBurst((b) => b + 1);
       }
     } catch {

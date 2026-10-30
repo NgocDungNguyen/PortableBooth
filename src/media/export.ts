@@ -41,7 +41,22 @@ export async function exportFilm(doc: FilmDoc, kind: ExportKind): Promise<Export
   }
 }
 
-export function downloadBlob(b: ExportResult) {
+type ClaudeHost = { claude?: { use?: (name: string) => Promise<{ save?: (r: { filename: string; data: Blob }) => Promise<unknown> } | null> } };
+
+/** Save the file. Inside a sandboxed host that offers a `downloads` capability, use it; otherwise a normal download. */
+export async function downloadBlob(b: ExportResult): Promise<void> {
+  const host = (window as unknown as ClaudeHost).claude;
+  if (host?.use) {
+    try {
+      const dl = await host.use('downloads');
+      if (dl?.save) {
+        await dl.save({ filename: b.filename, data: b.blob });
+        return;
+      }
+    } catch {
+      /* declined or unavailable: fall through to the plain download */
+    }
+  }
   const url = URL.createObjectURL(b.blob);
   const a = document.createElement('a');
   a.href = url;

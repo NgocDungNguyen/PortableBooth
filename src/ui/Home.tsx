@@ -39,7 +39,7 @@ export function Home({ onStart }: Props) {
     <div className="relative overflow-x-clip">
       {/* ---------- top bar ---------- */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-        <a href="#/" className="flex items-center gap-2 font-display text-xl font-extrabold" aria-label="PortableBooth home">
+        <a href="#home" className="flex items-center gap-2 font-display text-xl font-extrabold" aria-label="PortableBooth home">
           <span className="grid size-10 place-items-center rounded-xl border-[2.5px] border-line bg-lemon text-ink shadow-[0_3px_0_var(--shadow)]">
             <Camera size={22} aria-hidden />
           </span>

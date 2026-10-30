@@ -31,7 +31,7 @@ export default function Studio() {
     <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-3 pb-28 pt-3 sm:px-5">
       {/* top bar */}
       <header className="flex items-center gap-2">
-        <a href="#/" className="btn btn-icon btn-sm" aria-label="Home" title="Home">
+        <a href="#home" className="btn btn-icon btn-sm" aria-label="Home" title="Home">
           <Home size={22} aria-hidden />
         </a>
         <nav aria-label="Steps" className="mx-auto flex flex-1 items-center justify-center">

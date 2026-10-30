@@ -160,7 +160,7 @@ async function axe(page, name) {
   // ---- mobile pass over the studio (layout screenshots)
   const mob = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, bypassCSP: true, hasTouch: true, isMobile: true });
   const mp = await mob.newPage();
-  await mp.goto(BASE + '/#/studio', { waitUntil: 'networkidle' });
+  await mp.goto(BASE + '/#studio', { waitUntil: 'networkidle' });
   await mp.waitForSelector('[role=radiogroup][aria-label="Film type"]');
   await mp.waitForTimeout(800);
   await mp.screenshot({ path: `${SHOTS}/m1-film.png` });

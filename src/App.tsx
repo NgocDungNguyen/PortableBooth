@@ -7,7 +7,7 @@ import { Toast } from './ui/Toast';
 const Studio = lazy(() => import('./ui/Studio'));
 
 type Route = 'home' | 'studio';
-const read = (): Route => (location.hash.startsWith('#/studio') ? 'studio' : 'home');
+const read = (): Route => (location.hash === '#studio' ? 'studio' : 'home');
 
 function Router() {
   const [route, setRoute] = useState<Route>(read);
@@ -29,7 +29,7 @@ function Router() {
         startFrom(look.format, look.frames, look.filterId);
         setStep(1);
       }
-      location.hash = '#/studio';
+      location.hash = '#studio';
     },
     [startFrom, setStep],
   );
