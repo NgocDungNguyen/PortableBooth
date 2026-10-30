@@ -90,7 +90,7 @@ export function useReel({ count, sceneMs, auto, stillAt }: Opts): Reel {
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       const st = s.current;
-      const dt = Math.min(now - last, 50);
+      const dt = Math.max(0, Math.min(now - last, 50));
       last = now;
       if (st.holding || st.hidden || st.t >= total) return;
       apply(Math.min(total, st.t + dt));

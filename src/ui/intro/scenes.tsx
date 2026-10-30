@@ -117,10 +117,10 @@ function TallFilm({ local, i, doc }: { local: MotionValue<number>; i: number; do
   const t = TALL[i];
   return (
     <>
-      <Box x={t.x} y={8} w={27} h={72} style={{ y, opacity }}>
+      <Box x={t.x} y={5} w={27} h={71} style={{ y, opacity }}>
         <FilmCanvas doc={doc} label={`${t.label} film`} />
       </Box>
-      <Chip className="absolute -translate-x-1/2" style={{ left: `${t.x + 13.5}%`, top: '84%', opacity }}>{t.label}</Chip>
+      <Chip className="absolute -translate-x-1/2" style={{ left: `${t.x + 13.5}%`, top: '79.5%', opacity }}>{t.label}</Chip>
     </>
   );
 }
@@ -148,7 +148,6 @@ export function PickScene({ local }: SceneProps) {
             <Box x={6} y={w.y} w={88} h={w.h}>
               <FilmCanvas doc={d.wide[i]} label={`${w.label} wide film`} />
             </Box>
-            <Chip className="absolute" style={{ left: '4%', top: `${w.y - 1.2}%` }}>{w.label}</Chip>
           </div>
         ))}
       </motion.div>
@@ -213,7 +212,7 @@ export function SnapScene({ local }: SceneProps) {
   const stripOp = useTransform(stripIn, (v) => clamp01(v * 2));
   return (
     <div className="absolute inset-0">
-      <motion.div className="absolute left-[4%] top-[17%] w-[58%] overflow-hidden rounded-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.28)]" style={{ aspectRatio: '4 / 3', y: enterY, opacity: enterOp }}>
+      <motion.div className="absolute left-[4%] top-[21%] w-[58%] overflow-hidden rounded-[12px] shadow-[0_18px_40px_rgba(0,0,0,0.28)]" style={{ aspectRatio: '4 / 3', y: enterY, opacity: enterOp }}>
         <motion.div className="absolute inset-0" style={{ scale: live }}>
           <PhotoFill photoId={d.liveId} w={320} h={240} />
         </motion.div>
@@ -224,11 +223,11 @@ export function SnapScene({ local }: SceneProps) {
         {[3, 2, 1].map((n, i) => <Digit key={n} local={local} n={n} start={i * 300} />)}
         <motion.span className="absolute inset-0 bg-white" style={{ opacity: flash }} />
       </motion.div>
-      <motion.div className="absolute left-[4%] top-[58%] flex w-[58%] items-center justify-center gap-2" style={{ y: enterY, opacity: enterOp }}>
+      <motion.div className="absolute left-[4%] top-[60%] flex w-[58%] items-center justify-center gap-2" style={{ y: enterY, opacity: enterOp }}>
         <Chip on><Camera size={13} aria-hidden /> Camera</Chip>
         <Chip><Upload size={13} aria-hidden /> Upload</Chip>
       </motion.div>
-      <motion.span className="reel-shutter absolute left-[33%] top-[70%] -ml-[1.9rem]" style={{ scale: press, y: enterY, opacity: enterOp }} />
+      <motion.span className="reel-shutter absolute left-[33%] top-[71%] -ml-[1.9rem]" style={{ scale: press, y: enterY, opacity: enterOp }} />
       <Box x={66} y={5} w={30} h={90} style={{ y: stripY, opacity: stripOp }}>
         <FilmCanvas doc={doc} showEmpty label="Film strip">
           {(ppm) => ppm > 0 && SHOTS.map((_, i) => <DropTile key={i} local={local} i={i} ppm={ppm} doc={doc} />)}

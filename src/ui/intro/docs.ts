@@ -1,5 +1,6 @@
 import { newSticker, newText, newWidget } from '../../film/doc';
 import type { FilmDoc } from '../../film/types';
+import { filterById } from '../../film/filters';
 import { WIDGETS } from '../../render/widgets';
 import { previewDoc } from '../previewDocs';
 
@@ -32,18 +33,12 @@ export interface ReelDocs {
   finale: FilmDoc;
 }
 
-const LOOKS = [
-  { id: 'noir', name: 'Noir' },
-  { id: 'riso', name: 'Riso' },
-  { id: 'teal-night', name: 'Teal night' },
-  { id: 'sunday', name: 'Sunday' },
-  { id: 'cherry', name: 'Cherry' },
-];
+const LOOKS = ['noir', 'riso', 'teal-night', 'sunday', 'cherry'].map((id) => ({ id, name: filterById(id).name }));
 export const FRAME_LOOKS: FrameLook[] = [
   { style: 'grid', name: 'Graph paper', color: '#FFD66B', color2: '#17163A' },
   { style: 'dots', name: 'Polka dots', color: '#F4A6B7', color2: '#FFFFFF' },
   { style: 'gradient', name: 'Gradient', color: '#B9A7FF', color2: '#9FD3FF' },
-  { style: 'checker', name: 'Checker', color: '#17163A', color2: '#FFD66B' },
+  { style: 'holo', name: 'Holo foil', color: '#17163A', color2: '#FFD66B' },
 ];
 
 const SOLID_FINAL = FRAME_LOOKS[1];

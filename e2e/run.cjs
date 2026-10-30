@@ -32,7 +32,16 @@ const panel = (page) => page.locator('#tool-body');
 
   // ---- home
   await page.goto(BASE, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(3000);
+  await page.waitForSelector('[role=dialog][aria-label="How PortableBooth works"]');
+  await page.waitForTimeout(1600);
+  await page.screenshot({ path: `${SHOTS}/00-intro-scene1.png` });
+  await axe(page, 'intro');
+  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(900);
+  await page.screenshot({ path: `${SHOTS}/00-intro-scene2.png` });
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role=dialog][aria-label="How PortableBooth works"]', { state: 'detached' });
+  ok(true, 'intro: shows on a cold load and Esc skips it');
+  await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOTS}/01-home.png` });
   await page.screenshot({ path: `${SHOTS}/01b-home-full.png`, fullPage: true });
   await axe(page, 'home');
@@ -42,6 +51,9 @@ const panel = (page) => page.locator('#tool-body');
   const m = await ctx.newPage();
   await m.setViewportSize({ width: 390, height: 844 });
   await m.goto(BASE, { waitUntil: 'networkidle' });
+  await m.waitForSelector('[role=dialog][aria-label="How PortableBooth works"]');
+  await m.screenshot({ path: `${SHOTS}/02a-intro-mobile.png` });
+  await m.keyboard.press('Escape');
   await m.waitForTimeout(3000);
   await m.screenshot({ path: `${SHOTS}/02-home-mobile.png` });
   ok(await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'home: no horizontal scroll on mobile');
@@ -94,7 +106,7 @@ const panel = (page) => page.locator('#tool-body');
 
   // ---- photos: bad files first
   await page.getByRole('tab', { name: 'Photos' }).click();
-  const fileInput = page.locator('input[type=file]');
+  const fileInput = page.locator('input[aria-label="Choose photos"]');
   await fileInput.setInputFiles(svgBad);
   await page.waitForSelector('text=Only photos work here');
   ok(true, 'upload: svg rejected with a message');
@@ -212,6 +224,36 @@ const panel = (page) => page.locator('#tool-body');
   await page.getByRole('button', { name: 'Redo' }).click();
   await page.screenshot({ path: `${SHOTS}/14-studio-final.png` });
 
+  // ---- theme toggle (light <-> dark, in memory only)
+  await page.getByRole('radio', { name: 'Light theme' }).click();
+  ok((await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'light', 'theme: light can be chosen');
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${SHOTS}/14b-light-studio.png` });
+  await axe(page, 'studio (light theme)');
+  await page.getByRole('radio', { name: 'Dark theme' }).click();
+  ok((await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark', 'theme: dark can be chosen');
+  await page.getByRole('radio', { name: 'Auto theme' }).click();
+
+  // ---- horizontal ("Share (wide)") film keeps photos and elements
+  await page.getByRole('tab', { name: 'Film' }).click();
+  await page.getByRole('radio', { name: /Share \(wide\)/ }).click();
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: `${SHOTS}/14c-wide.png` });
+  ok(await page.getByRole('button', { name: 'Export', exact: true }).isEnabled(), 'wide: photos survive the switch to a horizontal film');
+  const box = await page.locator('canvas[aria-label="Your film"]').boundingBox();
+  ok(box.width > box.height * 2, `wide: film is horizontal (${Math.round(box.width)}x${Math.round(box.height)})`);
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.waitForSelector('dialog[open] #export-title');
+  const [wdl] = await Promise.all([page.waitForEvent('download'), (async () => { await page.locator('dialog[open]').getByRole('radio', { name: /PNG/ }).click(); await page.locator('dialog[open] .btn-primary').click(); })()]);
+  const wfile = path.join(SHOTS, wdl.suggestedFilename()); await wdl.saveAs(wfile);
+  const wbuf = fs.readFileSync(wfile);
+  ok(wbuf.readUInt32BE(16) > wbuf.readUInt32BE(20) * 2, `wide: PNG is horizontal (${wbuf.readUInt32BE(16)}x${wbuf.readUInt32BE(20)})`);
+  await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Film' }).click();
+  await page.getByRole('radio', { name: /Print \(tall\)/ }).click();
+  await page.waitForTimeout(400);
+  ok(await page.getByRole('button', { name: 'Export', exact: true }).isEnabled(), 'wide: switching back to tall keeps the photos');
+
   // ---- export
   await page.getByRole('button', { name: 'Export', exact: true }).click();
   await page.waitForSelector('dialog[open] #export-title');
@@ -248,7 +290,7 @@ const panel = (page) => page.locator('#tool-body');
   await mp.waitForSelector('[role=tablist][aria-label=Tools]');
   await mp.waitForTimeout(800);
   await mp.screenshot({ path: `${SHOTS}/m1-empty.png` });
-  await mp.locator('input[type=file]').setInputFiles(imgs.slice(0, 4));
+  await mp.locator('input[aria-label="Choose photos"]').setInputFiles(imgs.slice(0, 4));
   await mp.waitForTimeout(1000);
   await mp.getByRole('tab', { name: 'Looks' }).click();
   await mp.waitForTimeout(600);
@@ -272,13 +314,16 @@ const panel = (page) => page.locator('#tool-body');
   sp.on('console', (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) cspHits.push(m.text().slice(0, 160)); });
   sp.on('pageerror', (e) => cspHits.push('pageerror: ' + e.message));
   await sp.goto(BASE, { waitUntil: 'networkidle' });
+  await sp.waitForSelector('[role=dialog][aria-label="How PortableBooth works"]');
+  await sp.keyboard.press('Escape');
+  await sp.waitForSelector('[role=dialog][aria-label="How PortableBooth works"]', { state: 'detached' });
   await sp.getByRole('button', { name: 'Start', exact: true }).first().click();
   await sp.waitForSelector('[role=tablist][aria-label=Tools]');
-  await sp.locator('input[type=file]').setInputFiles(imgs[0]);
+  await sp.locator('input[aria-label="Choose photos"]').setInputFiles(imgs[0]);
   await sp.getByRole('tab', { name: 'Film' }).click();
   await sp.getByRole('radio', { name: /Instant/ }).click();
   await sp.getByRole('tab', { name: 'Photos' }).click();
-  await sp.locator('input[type=file]').setInputFiles(imgs[1]);
+  await sp.locator('input[aria-label="Choose photos"]').setInputFiles(imgs[1]);
   await sp.waitForTimeout(800);
   await sp.getByRole('tab', { name: 'Add' }).click();
   await sp.waitForSelector('#tool-body button[aria-label^="Add "]');

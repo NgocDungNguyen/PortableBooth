@@ -93,7 +93,9 @@ export function setOrientation(doc: FilmDoc, orientation: Orientation): FilmDoc 
   const b = computeLayout(doc.format, frames, doc.corners, orientation);
   const kx = b.widthMm / a.widthMm;
   const ky = b.heightMm / a.heightMm;
-  const k = Math.min(kx, ky);
+  // elements keep their size relative to a photo (not to the whole film), so a sticker stays readable after the switch
+  const slotMin = (l: typeof a) => Math.min(l.slots[0].w, l.slots[0].h);
+  const k = clamp(slotMin(b) / slotMin(a), 0.6, 1.6);
   const items = doc.items.map((it) => ({
     ...it,
     x: clamp(it.x * kx, 0, b.widthMm),
