@@ -79,7 +79,7 @@ export function LooksPanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="sticky top-0 z-10 -mx-4 -mt-3 flex flex-col gap-2 bg-surface px-4 pb-2 pt-3">
+      <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Seg label="Looks" value={sub} onChange={setSub} options={[{ id: 'filters', label: 'Filters' }, { id: 'adjust', label: 'Adjust' }, { id: 'overlays', label: 'Overlays' }]} />
         <button className="btn btn-icon" onClick={surprise} aria-label="Surprise me" title="Surprise me"><Shuffle size={18} aria-hidden /></button>
