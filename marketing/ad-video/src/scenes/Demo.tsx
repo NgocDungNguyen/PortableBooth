@@ -373,7 +373,7 @@ export function Same() {
           </Float>
         </div>
       </div>
-      <div style={{ position: 'absolute', left: v ? 64 : W * 0.06, top: v ? H * 0.5 : H * 0.8, display: 'flex', gap: 16 }}>
+      <div style={{ position: 'absolute', left: v ? 64 : W * 0.06, top: v ? H * 0.5 : H * 0.06, display: 'flex', gap: 16 }}>
         <Tag dark={false} style={{ background: phoneOn ? C.violet : 'rgba(20,18,31,.06)', color: phoneOn ? '#fff' : C.text }}>Phone</Tag>
         <Tag dark={false} style={{ background: !phoneOn ? C.violet : 'rgba(20,18,31,.06)', color: !phoneOn ? '#fff' : C.text }}>Laptop</Tag>
       </div>

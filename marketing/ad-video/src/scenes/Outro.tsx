@@ -360,8 +360,8 @@ export function End() {
           Go make some memories.
         </div>
       </div>
-      <div style={{ position: 'absolute', left: 0, right: v ? W * 0.12 : 0, bottom: v ? H * 0.205 : H * 0.05, textAlign: 'center', fontFamily: F.ui, fontWeight: 500, fontSize: v ? 30 : 26, color: '#5c5868', opacity: ramp(t, 0.8, 1.3) }}>
-        Made by June Nguyen · RMIT Hà Nội
+      <div style={{ position: 'absolute', left: 0, right: v ? W * 0.12 : 0, bottom: v ? H * 0.205 : H * 0.05, display: 'flex', justifyContent: 'center', opacity: ramp(t, 0.8, 1.3) }}>
+        <span style={{ fontFamily: F.ui, fontWeight: 550, fontSize: v ? 30 : 26, color: '#3d3a48', padding: '10px 24px', borderRadius: 999, background: 'rgba(251,248,243,.92)', boxShadow: '0 6px 20px rgba(20,18,31,.12)' }}>Made by June Nguyen · RMIT Hà Nội</span>
       </div>
       <Sparks at={0.02} x={W / 2} y={v ? H * 0.26 : H * 0.28} spread={v ? 560 : 800} count={30} seed={30} />
       <Flash at={0.02} decay={0.35} max={0.85} />
