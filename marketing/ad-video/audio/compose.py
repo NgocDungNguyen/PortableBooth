@@ -152,7 +152,7 @@ def ks_pluck(midi, dur=0.6, bright=0.5, level=0.5):
     d = 0.996 - 0.006 * (1 - bright)
     y = np.concatenate([buf, np.zeros(n)])
     for i in range(p, n + p):  # Karplus-Strong
-        y[i] = d * 0.5 * (y[i - p] + y[i - p + 1 if i - p + 1 < i else i - p])
+        y[i] = d * 0.5 * (y[i - p] + y[i - p + 1])
     out = y[p:n + p]
     out *= np.minimum(np.arange(n) / 48, 1)
     return out * level
