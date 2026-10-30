@@ -137,7 +137,7 @@ export function Rise({ at, children, style, dur = 0.55, dy = 1.1 }: { at: number
   const t = useT();
   const k = ramp(t, at, at + dur);
   return (
-    <span style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', paddingBottom: '0.08em', marginBottom: '-0.08em', ...style }}>
+    <span style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', paddingBottom: '0.22em', marginBottom: '-0.22em', paddingRight: '0.06em', ...style }}>
       <span style={{ display: 'inline-block', translate: `0 ${(1 - k) * dy * 100}%`, opacity: k > 0 ? 1 : 0 }}>{children}</span>
     </span>
   );

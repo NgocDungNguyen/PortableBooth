@@ -7,9 +7,12 @@
   "scripts": {
     "studio": "remotion studio",
     "align": "python3 tools/align.py public/audio/vo.mp3",
+    "fonts": "node tools/fonts.mjs",
     "capture": "node capture/all.cjs",
-    "music": "python3 audio/compose.py",
+    "cues": "tsx tools/cues.ts",
+    "music": "tsx tools/cues.ts && python3 audio/compose.py",
     "render": "node tools/render.mjs",
+    "qa": "node tools/qa.mjs",
     "build": "node tools/build.mjs"
   },
   "dependencies": {

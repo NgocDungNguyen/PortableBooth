@@ -198,11 +198,14 @@ export function Logo() {
         <div style={{ scale: String(0.85 + mark * 0.15), opacity: mark, transform: v ? 'scale(0.82)' : undefined }}>
           <Wordmark size={size} reveal={mark} />
         </div>
-        <div style={{ fontFamily: F.serif, fontStyle: 'italic', fontSize: v ? 86 : 84, color: C.text, textAlign: 'center', lineHeight: 1.08, maxWidth: v ? 860 : 1500, padding: '0 40px' }}>
-          {['The', 'photobooth', 'that', 'goes'].map((x, i) => (
+        <div style={{ fontFamily: F.serif, fontStyle: 'italic', fontSize: v ? 88 : 84, color: C.text, textAlign: 'center', lineHeight: 1.1, maxWidth: v ? 1000 : 1700, padding: '0 40px' }}>
+          {['The', 'photobooth'].map((x, i) => (
             <Rise key={i} at={tag + i * 0.16} style={{ marginRight: '0.24em' }}>{x}</Rise>
           ))}
           {v && <br />}
+          {['that', 'goes'].map((x, i) => (
+            <Rise key={x} at={tag + 0.32 + i * 0.16} style={{ marginRight: '0.24em' }}>{x}</Rise>
+          ))}
           {['where', 'you'].map((x, i) => (
             <Rise key={x} at={tag + 0.75 + i * 0.12} style={{ marginRight: '0.24em' }}>{x}</Rise>
           ))}

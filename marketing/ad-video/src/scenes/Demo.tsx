@@ -154,7 +154,7 @@ export function Pose() {
       )}
       {/* after the snap, the photos drop into a strip */}
       {frozen && (
-        <div style={{ position: 'absolute', left: v ? W * 0.74 : W * 0.75, top: v ? H * 0.12 : H * 0.12, rotate: '6deg', translate: `0 ${(1 - ramp(t, snap + 0.15, snap + 0.6)) * -H * 0.6}px` }}>
+        <div style={{ position: 'absolute', left: v ? W * 0.74 : W * 0.16, top: v ? H * 0.12 : H * 0.12, rotate: v ? '6deg' : '-6deg', translate: `0 ${(1 - ramp(t, snap + 0.15, snap + 0.6)) * -H * 0.6}px` }}>
           <FilmImg name="strip-sunday" height={v ? 620 : 760} />
         </div>
       )}
@@ -171,9 +171,9 @@ export function Upload() {
   const { W, H, v } = useFormat();
   const seg = SEG.upload;
   const enter = useSpring(0, { damping: 18, stiffness: 110 });
-  const lw = v ? 1180 : 1560;
-  const lx = W / 2 - lw / 2;
-  const ly = v ? H * 0.2 : H * 0.12;
+  const lw = v ? 1500 : 1560;
+  const lx = W / 2 - lw / 2 + (v ? 120 : 0);
+  const ly = v ? H * 0.16 : H * 0.12;
   const { from, rate } = resolveSeg(seg);
   const ct = from + t * rate;
   const clip = CLIPS['desk-upload'];
@@ -186,7 +186,7 @@ export function Upload() {
   const sx = lx + (lw - lid) / 2 + lid * 0.022;
   const sy = ly + lid * 0.022 + sw * (38 / 1440);
   const dropK = ramp(ct, clip.marks.drop + 0.2, clip.marks.drop + 0.6);
-  const folder = { x: v ? W * 0.52 : W * 0.66, y: v ? H * 0.55 : H * 0.52 };
+  const folder = { x: v ? W * 0.1 : W * 0.66, y: v ? H * 0.47 : H * 0.52 };
   return (
     <Fill>
       <DarkBg seed={7} />
@@ -227,14 +227,14 @@ export function Yours() {
   const looks = ['strip-sunday', 'strip-cherry', 'strip-noir', 'strip-golden', 'strip-vintage'];
   const L = (x: number) => x - S.yours;
   const i = Math.floor(Math.max(0, t) / 0.25) % looks.length;
-  const sh = v ? 1000 : 860;
+  const sh = v ? 880 : 860;
   return (
     <Fill>
       <DarkBg glow={C.violet} seed={8} />
-      <div style={{ position: 'absolute', left: W / 2 - sh * 0.168, top: (v ? H * 0.38 : H * 0.5) - sh / 2, rotate: `${-4 + t * 2}deg`, scale: String(0.96 + t * 0.03), opacity: 0.95 }}>
+      <div style={{ position: 'absolute', left: (v ? W / 2 : W * 0.27) - sh * 0.168, top: (v ? H * 0.31 : H * 0.5) - sh / 2, rotate: `${-4 + t * 2}deg`, scale: String(0.96 + t * 0.03), opacity: 0.95 }}>
         <FilmImg name={looks[i]} height={sh} />
       </div>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: v ? H * 0.58 : H * 0.3, textAlign: 'center', mixBlendMode: 'normal' }}>
+      <div style={{ position: 'absolute', left: v ? 0 : W * 0.42, right: 0, top: v ? H * 0.57 : H * 0.27, textAlign: 'center' }}>
         <div style={{ fontFamily: F.display, fontWeight: 800, fontSize: v ? 190 : 230, letterSpacing: '-0.05em', color: C.paper, lineHeight: 0.9, textShadow: '0 20px 60px rgba(0,0,0,.45)' }}>
           <Rise at={L(w('now', 2)) - 0.05}>Make it</Rise>
         </div>
@@ -249,16 +249,16 @@ export function Yours() {
 type Shot = { key: keyof typeof SEG; label: string; focus: [number, number, number, number] };
 // focus: [cx, cy, zoom 16:9, zoom 9:16] in desktop CSS px of the recorded 1440x900 screen
 const SHOTS: Shot[] = [
-  { key: 'looks', label: '42 looks', focus: [880, 470, 1.3, 1.0] },
-  { key: 'frames', label: 'Frames', focus: [880, 470, 1.3, 1.0] },
-  { key: 'colours', label: 'Colours', focus: [880, 520, 1.3, 1.0] },
-  { key: 'stickers', label: 'Stickers', focus: [880, 470, 1.3, 1.0] },
-  { key: 'text', label: 'Text', focus: [860, 420, 1.35, 1.0] },
-  { key: 'details', label: 'Widgets', focus: [860, 470, 1.3, 1.0] },
+  { key: 'looks', label: '42 looks', focus: [905, 470, 1.3, 1.0] },
+  { key: 'frames', label: 'Frames', focus: [905, 470, 1.3, 1.0] },
+  { key: 'colours', label: 'Colours', focus: [905, 520, 1.3, 1.0] },
+  { key: 'stickers', label: 'Stickers', focus: [905, 470, 1.3, 1.0] },
+  { key: 'text', label: 'Text', focus: [905, 420, 1.35, 1.0] },
+  { key: 'details', label: 'Widgets', focus: [905, 470, 1.3, 1.0] },
   { key: 'drag', label: 'Drag', focus: [560, 420, 1.9, 1.45] },
   { key: 'resize', label: 'Resize', focus: [560, 420, 1.9, 1.45] },
   { key: 'crop', label: 'Crop', focus: [760, 380, 1.6, 1.15] },
-  { key: 'tint', label: 'Tint', focus: [860, 470, 1.3, 1.0] },
+  { key: 'tint', label: 'Tint', focus: [905, 470, 1.3, 1.0] },
 ];
 
 /** desktop editing montage, fast cuts on the beat */
@@ -271,7 +271,7 @@ export function Edit() {
   const seg = SEG[shot.key];
   const lt = abs - seg.at;
   // laptop geometry; the "camera" keeps the focus point at the frame centre
-  const lw = v ? 1880 : 1560;
+  const lw = v ? 1800 : 1560;
   const lid = lw * 0.84;
   const sw = lid - lid * 0.022 * 2;
   const k = sw / 1440;
@@ -330,7 +330,7 @@ export function Everything() {
           );
         })}
       </div>
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 40% at 50% 50%, rgba(251,248,243,.92), rgba(251,248,243,.35) 70%, transparent)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(75% 45% at 50% 48%, rgba(251,248,243,.97) 0%, rgba(251,248,243,.85) 55%, rgba(251,248,243,.35) 100%)' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, top: v ? H * 0.36 : H * 0.33, textAlign: 'center' }}>
         <div style={{ fontFamily: F.display, fontWeight: 800, fontSize: v ? 170 : 220, letterSpacing: '-0.05em', color: C.text, lineHeight: 0.92 }}>
           <Rise at={L(w('everything')) - 0.05}>Everything</Rise>

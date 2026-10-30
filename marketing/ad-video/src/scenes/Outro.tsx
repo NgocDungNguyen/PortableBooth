@@ -325,7 +325,7 @@ export function End() {
     <Fill>
       <SunBg seed={17} />
       {/* fanned films behind, out of focus */}
-      <div style={{ position: 'absolute', left: W / 2, top: v ? H * 0.74 : H * 0.83, filter: 'blur(5px)', opacity: 0.55 }}>
+      <div style={{ position: 'absolute', left: W / 2, top: v ? H * 1.08 : H * 1.22, filter: 'blur(4px)', opacity: 0.6 }}>
         {['strip-cherry', 'strip-sunday', 'strip-golden', 'strip-noir', 'strip-vintage'].map((n, i) => (
           <div key={n} style={{ position: 'absolute', left: -110, top: -560, transformOrigin: '50% 100%', rotate: `${(i - 2) * 13 * ramp(t, 0.1, 0.9)}deg` }}>
             <FilmImg name={n} height={v ? 620 : 560} />
