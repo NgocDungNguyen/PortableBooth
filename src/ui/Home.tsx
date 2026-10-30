@@ -200,7 +200,7 @@ export function Home({ onStart, onHowItWorks, ready = true }: Props) {
         <div className="mx-auto flex max-w-[78rem] flex-col gap-6 px-5 py-10 md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex flex-col gap-2">
             {WORDMARK}
-            <p className="flex items-center gap-2 text-sm text-muted"><Lock size={14} aria-hidden /> Photos never leave your device. Nothing is uploaded or stored.</p>
+            <p className="flex items-center gap-2 text-sm text-muted"><Lock size={14} aria-hidden /> Photos stay on your device. Nothing is uploaded or stored.</p>
           </div>
           <div className="flex flex-col gap-2 text-sm md:items-end">
             <a href="#about" className="footer-link">About</a>

@@ -9,7 +9,7 @@ Built so the same designs can later be printed by a PortableBooth printer.
 - Photos live in memory only and disappear when the tab closes ("Clear everything" button in the studio).
 - EXIF / GPS is dropped on import (pixels are re-drawn) and never written on export.
 - Uploads are treated as untrusted: size cap, no SVG, must decode as a raster image.
-- Strict CSP (`default-src 'none'`, no network access at all), Permissions-Policy (camera only), `no-referrer`,
+- Strict CSP (`default-src 'none'`; `connect-src 'self'` only for the Send-to-a-phone relay), Permissions-Policy (camera only), `no-referrer`,
   no framing. Headers: `public/_headers` (Cloudflare Pages / Netlify); the CSP is also baked into the built HTML.
 - No third-party scripts, fonts or requests. All fonts are self-hosted.
 
@@ -53,3 +53,12 @@ See `LICENSES.md` for asset and font licenses.
   music pauses while the tab is hidden. Volume, on/off and track are kept in memory only.
 - **Settings** (gear button, `src/ui/Settings.tsx`): theme, music on/off, track, volume, replay intro, about.
 - **About** lives at `#about` (`src/ui/About.tsx`).
+
+## Send to a phone
+
+`worker/index.js` (Cloudflare Workers + one Durable Object) is a relay at `/beam/<room>` that pairs one sender with
+one receiver over WebSockets. The browser encrypts the photo with AES-GCM-256 before it leaves; the key is only in the
+QR link's `#fragment`, which browsers never send to servers, so the relay forwards ciphertext. Nothing is stored; a
+room closes after one transfer or 15 minutes. `npx wrangler dev` runs it locally after `npm run build`. On hosts
+without the Worker (GitHub Pages, the single-file preview) the other sharing options still work and Send shows a
+clear message.

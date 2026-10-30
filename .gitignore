@@ -11,3 +11,4 @@ marketing/ad-video/out/
 marketing/out/*.mp4
 __pycache__/
 marketing/ad-video/audio/build/
+.wrangler/

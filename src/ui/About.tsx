@@ -6,7 +6,7 @@ import { SettingsButton } from './Settings';
 
 const PROMISES = [
   { Icon: Smartphone, title: 'Stays on your device', body: 'Photos live in memory and are gone when you close the tab. No accounts, no uploads, no cloud.' },
-  { Icon: WifiOff, title: 'Makes no network calls', body: 'A strict security policy blocks every outside request, so nothing can slip out even by accident.' },
+  { Icon: WifiOff, title: 'No outside requests', body: 'A strict security policy blocks every other website. Send to a phone is end-to-end encrypted: only the other phone can open the photo.' },
   { Icon: MapPinOff, title: 'Drops hidden data', body: 'Location and camera details are stripped when a photo comes in and are never written on export.' },
   { Icon: EyeOff, title: 'No tracking at all', body: 'No cookies, no storage, no analytics. Settings are remembered only until you close the tab.' },
 ];
@@ -84,7 +84,7 @@ export function About({ onStart }: { onStart: () => void }) {
             </p>
             <p className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 text-text">
               <ShieldCheck size={20} aria-hidden className="mt-0.5 shrink-0 text-accent" />
-              <span>Nothing leaves your device. Your photos stay yours.</span>
+              <span>Nothing leaves your device unless you send it. Your photos stay yours.</span>
             </p>
           </div>
         </motion.section>

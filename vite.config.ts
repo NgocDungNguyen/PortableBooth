@@ -10,7 +10,7 @@ export const CSP = [
   "img-src 'self' blob: data:",
   "font-src 'self'",
   "media-src 'self' blob:",
-  "connect-src 'none'",
+  "connect-src 'self'",
   "worker-src 'none'",
   "object-src 'none'",
   "base-uri 'none'",
