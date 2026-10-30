@@ -28,6 +28,17 @@ vec3 tap(vec2 p, vec3 fb){
   return mix(fb, t.rgb, step(0.5, t.a));
 }
 
+// colour (lightly graded) at the centre of the halftone cell under fp, plus the position inside the cell
+vec3 screenSample(vec2 fp, float sa, float ca, float cells, out vec2 q, vec3 fb){
+  mat2 R = mat2(ca, -sa, sa, ca);
+  vec2 rp = R * (fp * cells);
+  vec2 id = floor(rp) + 0.5;
+  q = rp - id;
+  vec2 cp = id * R; // inverse rotation back to film space
+  vec3 hc = tap(vec2(cp.x, cp.y / (uRes.y / uRes.x)) / cells, fb);
+  return (hc - 0.5) * (1.0 + uContrast * 0.9) + 0.5 + uBright * 0.25;
+}
+
 void main(){
   vec4 src = texture2D(uTex, vUv);
   if (src.a < 0.002) { gl_FragColor = vec4(0.0); return; }
@@ -90,26 +101,27 @@ void main(){
 
   if (uHalf > 0.0) {
     float cells = min(88.0, uRes.x / 5.0);
-    float sa = 0.5, ca = 0.8660254; // 30 degree screen
-    mat2 R = mat2(ca, -sa, sa, ca);
-    vec2 rp = R * (vec2(vUv.x, vUv.y * ratio) * cells);
-    vec2 id = floor(rp) + 0.5;
-    vec2 q = rp - id;
-    vec2 cp = id * R; // inverse rotation back to film space
-    vec3 hc = tap(vec2(cp.x, cp.y / ratio) / cells, c);
-    hc = (hc - 0.5) * (1.0 + uContrast * 0.9) + 0.5 + uBright * 0.25;
-    float hl = clamp(luma(hc), 0.0, 1.0);
-    float rad = sqrt(1.0 - hl) * 0.7;
     float aa = cells / uRes.x;
-    float m = (1.0 - smoothstep(rad - aa, rad + aa, length(q))) * smoothstep(0.0, 0.06, rad);
-    vec3 ink = uDuoA;
-    vec3 paper = uDuoB;
-    if (uDuo <= 0.0) {
-      vec3 hue = hc / max(max(hc.r, max(hc.g, hc.b)), 0.05);
-      ink = clamp(hue, 0.0, 1.0) * mix(0.5, 0.95, hl);
-      paper = vec3(0.97, 0.94, 0.88);
+    vec2 fp = vec2(vUv.x, vUv.y * ratio);
+    vec2 q1;
+    vec3 h1 = screenSample(fp, 0.5, 0.8660254, cells, q1, c); // 30 degree screen
+    float l1 = clamp(luma(h1), 0.0, 1.0);
+    float r1 = pow(1.0 - l1, 0.6) * 0.72;
+    float m1 = (1.0 - smoothstep(r1 - aa, r1 + aa, length(q1))) * smoothstep(0.0, 0.06, r1);
+    vec3 res;
+    if (uDuo > 0.0) {
+      // two spot-colour inks (a by darkness, mid by warmth) printed on paper b
+      vec2 q2;
+      vec3 h2 = screenSample(fp, 0.9659258, 0.258819, cells, q2, c); // 75 degree screen
+      float cov = clamp((h2.r - h2.b) * 1.4 + (1.0 - luma(h2)) * 0.15, 0.0, 1.0);
+      float r2 = sqrt(cov) * 0.7;
+      float m2 = (1.0 - smoothstep(r2 - aa, r2 + aa, length(q2))) * smoothstep(0.0, 0.06, r2);
+      res = uDuoB * mix(vec3(1.0), uDuoA, m1) * mix(vec3(1.0), uDuoM, m2);
+    } else {
+      vec3 hue = h1 / max(max(h1.r, max(h1.g, h1.b)), 0.05);
+      res = mix(vec3(0.97, 0.94, 0.88), clamp(hue, 0.0, 1.0) * mix(0.5, 0.95, l1), m1);
     }
-    c = mix(c, mix(paper, ink, m), uHalf);
+    c = mix(c, res, uHalf);
   }
 
   if (uScan > 0.0) {

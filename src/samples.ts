@@ -175,7 +175,7 @@ function goldenSkyline(x: Ctx, r: Rnd, w: number, h: number) {
   const u = w / 480;
   const hor = h * 0.63;
   vband(x, w, 0, hor, [[0, '#3a4f86'], [0.3, '#8b8aa8'], [0.6, '#f0a77f'], [0.85, '#ffc888'], [1, '#ffd9a3']]);
-  const sx = w * 0.64, sy = hor - h * 0.16;
+  const sx = w * 0.64, sy = hor - h * 0.36;
   cloud(x, r, w * 0.25, h * 0.2, w * 0.55, h * 0.05, [255, 205, 190], 0.35);
   cloud(x, r, w * 0.75, h * 0.3, w * 0.5, h * 0.045, [255, 190, 150], 0.4);
   cloud(x, r, w * 0.4, h * 0.42, w * 0.6, h * 0.04, [255, 215, 170], 0.45);
@@ -188,13 +188,13 @@ function goldenSkyline(x: Ctx, r: Rnd, w: number, h: number) {
   x.fillStyle = sun;
   x.fillRect(sx - 30 * u, sy - 30 * u, 60 * u, 60 * u);
   const haze: RGB = [236, 178, 140];
-  skylineLayer(x, r, w, hor, h * 0.12, h * 0.34, [14, 40], mixc(haze, [120, 120, 150], 0.18), u, 0);
+  skylineLayer(x, r, w, hor, h * 0.12, h * 0.34, [14, 40], mixc(haze, [120, 110, 150], 0.3), u, 0);
   vband(x, w, hor - h * 0.3, hor, [[0, 'rgba(255,205,150,0)'], [1, 'rgba(255,205,150,0.45)']]);
-  skylineLayer(x, r, w, hor, h * 0.08, h * 0.28, [16, 44], mixc(haze, [90, 70, 100], 0.45), u, 0.05);
+  skylineLayer(x, r, w, hor, h * 0.08, h * 0.28, [16, 44], mixc(haze, [80, 60, 100], 0.62), u, 0.05);
   vband(x, w, hor - h * 0.18, hor, [[0, 'rgba(255,190,140,0)'], [1, 'rgba(255,190,140,0.3)']]);
-  skylineLayer(x, r, w, hor, h * 0.05, h * 0.2, [18, 50], mixc(haze, [50, 40, 70], 0.75), u, 0.14);
+  skylineLayer(x, r, w, hor, h * 0.05, h * 0.2, [18, 50], mixc(haze, [40, 30, 62], 0.9), u, 0.16);
   // river
-  vband(x, w, hor, h, [[0, '#f6c08a'], [0.5, '#7b5c78'], [1, '#2f2c4f']]);
+  vband(x, w, hor, h, [[0, '#f1b27e'], [0.45, '#5b4468'], [1, '#221d3a']]);
   reflect(x, w, hor, h * 0.22, r, 0.55, u);
   for (let i = 0; i < 170; i++) {
     const yy = hor + Math.pow(r(), 1.3) * h * 0.3;
@@ -204,7 +204,7 @@ function goldenSkyline(x: Ctx, r: Rnd, w: number, h: number) {
     x.fillRect(sx + between(r, -1, 1) * (30 + k * 90) * u, yy, between(r, 6, 30) * u * (0.6 + k), (0.8 + k * 2) * u);
   }
   // near bank / rooftops silhouette
-  x.fillStyle = '#1f1a2b';
+  x.fillStyle = '#120f1c';
   x.beginPath();
   x.moveTo(0, h);
   x.lineTo(0, h * 0.9);
@@ -248,7 +248,7 @@ function nightBokeh(x: Ctx, r: Rnd, w: number, h: number) {
   }
   // wet street: vertical smears of the lights
   const sy = h * 0.8;
-  vband(x, w, sy, h, [[0, 'rgba(8,6,16,0.55)'], [1, 'rgba(6,4,10,0.9)']]);
+  vband(x, w, sy - h * 0.06, h, [[0, 'rgba(8,6,16,0)'], [0.3, 'rgba(8,6,16,0.55)'], [1, 'rgba(6,4,10,0.9)']]);
   for (let i = 0; i < 26; i++) {
     const c = pick();
     streak(x, r() * w, sy, h, between(r, 14, 50) * u, c, between(r, 0.3, 0.7));
@@ -450,9 +450,9 @@ function pine(x: Ctx, cx: number, base: number, ph: number, pw: number, col: str
 /** layered pine forest in morning mist with light shafts */
 function mistyForest(x: Ctx, r: Rnd, w: number, h: number) {
   const u = w / 480;
-  vband(x, w, 0, h, [[0, '#8fa3a6'], [0.3, '#b4c4c0'], [0.55, '#c3cfc6'], [1, '#8fa59c']]);
+  vband(x, w, 0, h, [[0, '#7f9497'], [0.3, '#9fb0ad'], [0.55, '#b0beb6'], [1, '#8fa59c']]);
   cloud(x, r, w * 0.3, h * 0.08, w * 0.8, h * 0.06, [215, 225, 222], 0.35);
-  glow(x, w * 0.82, h * 0.06, w * 0.7, h * 0.4, [255, 226, 170], 0.5);
+  glow(x, w * 0.82, h * 0.06, w * 0.6, h * 0.34, [255, 222, 160], 0.2);
   const layers: { y: number; n: number; hh: [number, number]; col: RGB; fog: number }[] = [
     { y: 0.5, n: 20, hh: [0.12, 0.2], col: [168, 188, 180], fog: 0.55 },
     { y: 0.6, n: 15, hh: [0.17, 0.28], col: [128, 154, 148], fog: 0.5 },
@@ -487,7 +487,7 @@ function mistyForest(x: Ctx, r: Rnd, w: number, h: number) {
     const sx0 = w * (0.55 + i * 0.12) + between(r, -0.05, 0.05) * w;
     const wd = between(r, 16, 46) * u;
     const g = x.createLinearGradient(sx0, 0, sx0 - w * 0.5, h);
-    g.addColorStop(0, `rgba(255,240,200,${between(r, 0.12, 0.22)})`);
+    g.addColorStop(0, `rgba(255,240,200,${between(r, 0.07, 0.14)})`);
     g.addColorStop(1, 'rgba(255,240,200,0)');
     x.fillStyle = g;
     x.beginPath();

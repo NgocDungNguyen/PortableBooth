@@ -182,7 +182,7 @@ function grainTile() {
     const r = mulberry32(1337);
     for (let i = 0; i < d.length; i += 4) {
       const g = (r() + r() + r() - 1.5) / 1.5; // -1..1, bell shaped
-      const v = 128 + g * 120;
+      const v = 128 + g * 88;
       d[i] = d[i + 1] = d[i + 2] = v;
       d[i + 3] = 255;
     }
@@ -198,7 +198,7 @@ function blotchTile() {
     const mid = periodicNoise(256, 128, r);
     for (let i = 0, p = 0; i < d.length; i += 4, p++) {
       const g = (r() + r() - 1) * 0.9 + (lo[p] - 0.5) * 0.55 + (mid[p] - 0.5) * 0.7;
-      const v = 128 + Math.max(-1, Math.min(1, g)) * 125;
+      const v = 128 + Math.max(-1, Math.min(1, g)) * 90;
       d[i] = d[i + 1] = d[i + 2] = v;
       d[i + 3] = 255;
     }
@@ -322,7 +322,7 @@ function leaks(ctx: CanvasRenderingContext2D, a: Area, r: Rng, op: number, layer
   picks.forEach((side, k) => {
     ctx.save();
     const { E } = edgeFrame(ctx, a, side, 0.15 + r() * 0.7);
-    const size = Math.max(a.w, a.h) * (k === 0 ? 1 : 0.55);
+    const size = Math.max(a.w, a.h) * (k === 0 ? 0.82 : 0.5);
     const tilt = (r() - 0.5) * 0.5;
     ctx.globalAlpha = op * (k === 0 ? 1 : 0.7);
     for (const L of layers) {
