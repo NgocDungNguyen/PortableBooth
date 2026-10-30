@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { filledCount, isComplete } from '../film/doc';
 import { useStudio, type Tool } from '../state/studio';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ThemeToggle } from './ThemeToggle';
 import { ExportDialog } from './ExportDialog';
 import { IntakeProvider } from './intake';
 import { Stage } from './edit/Stage';
@@ -61,6 +62,7 @@ function StudioInner() {
         <a href="#home" className="btn btn-icon btn-ghost" aria-label="Home"><Home size={20} aria-hidden /></a>
         <span className="mr-auto hidden font-display text-base font-semibold sm:block">PortableBooth</span>
         <span className="mr-auto sm:hidden" />
+        <ThemeToggle className="mr-1 hidden sm:inline-flex" />
         <button className="btn btn-icon btn-ghost" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo"><Undo2 size={20} aria-hidden /></button>
         <button className="btn btn-icon btn-ghost" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo"><Redo2 size={20} aria-hidden /></button>
         <button className="btn btn-icon btn-ghost" onClick={() => setConfirm(true)} aria-label="Clear everything" title="Clear everything"><ShieldX size={20} aria-hidden /></button>
@@ -88,7 +90,7 @@ function StudioInner() {
                   setTool(id);
                   if (selection?.type === 'item' || (selection?.type === 'slot' && id !== 'looks')) setSelection(null);
                 }}
-                className={`flex min-h-12 min-w-[2.9rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs font-semibold transition-colors ${tool === id && !showInspector ? 'bg-surface3 text-text' : 'text-muted hover:text-text'}`}
+                className={`flex min-h-12 min-w-[2.9rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs font-semibold transition-colors ${tool === id && !showInspector ? 'bg-accent/12 text-accent' : 'text-muted hover:text-text'}`}
               >
                 <Icon size={19} aria-hidden />
                 {label}

@@ -60,7 +60,7 @@ export interface RenderResult {
 }
 
 export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: RenderOptions): RenderResult {
-  const layout = computeLayout(doc.format, doc.frames, doc.corners);
+  const layout = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
   const g = sharedGL();
   const cap = Math.min(g?.maxSize ?? 4096, 8192);
   const ppm = Math.min(opts.ppm, cap / Math.max(layout.widthMm, layout.heightMm));
@@ -153,7 +153,7 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
         ctx.setLineDash([]);
         ctx.globalAlpha = 1;
       }
-      if (has && doc.format === 'instant') {
+      if (has && layout.slotHairline) {
         roundRect(ctx, r.x, r.y, r.w, r.h, layout.slotRadius * ppm);
         ctx.strokeStyle = 'rgba(0,0,0,0.12)';
         ctx.lineWidth = 0.3 * ppm;
@@ -187,23 +187,25 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
   ctx.save();
   ctx.fillStyle = ink;
   ctx.textBaseline = 'middle';
-  if (layout.caption && doc.brandMark) {
-    const c = layout.caption;
-    const size = (doc.format === 'strip' ? 3.2 : 3) * ppm;
-    ctx.font = `600 ${size}px "Geist Variable", system-ui, sans-serif`;
-    ctx.textAlign = doc.format === 'strip' ? 'center' : 'right';
-    const bx = doc.format === 'strip' ? (c.x + c.w / 2) * ppm : (c.x + c.w) * ppm;
+  if (layout.captionBrand && doc.brandMark) {
+    const cb = layout.captionBrand;
+    ctx.font = `600 ${cb.size * ppm}px "Geist Variable", system-ui, sans-serif`;
+    ctx.textAlign = cb.align;
     ctx.globalAlpha = 0.8;
-    ctx.fillText(BRAND, bx, (c.y + c.h - 3.4) * ppm);
+    ctx.fillText(BRAND, cb.x * ppm, cb.y * ppm);
+    ctx.globalAlpha = 1;
   }
-  if (doc.format === 'film35') {
+  if (layout.edgeText) {
+    const et = layout.edgeText;
     ctx.fillStyle = '#FFA726';
-    ctx.font = `${1.9 * ppm}px "Special Elite", monospace`;
+    ctx.font = `${et.size * ppm}px "Special Elite", monospace`;
     ctx.textAlign = 'left';
-    if (doc.brandMark) ctx.fillText(`${BRAND.toUpperCase()} 400`, 8 * ppm, 4.4 * ppm);
-    layout.frameNumberYs.forEach((y, i) => ctx.fillText(`> ${i + 1}  ${i + 1}A`, 8 * ppm, y * ppm));
-    ctx.textAlign = 'right';
-    ctx.fillText('>', (layout.widthMm - 8) * ppm, (layout.heightMm - 3.6) * ppm);
+    if (et.brand && doc.brandMark) ctx.fillText(`${BRAND.toUpperCase()} 400`, et.brand.x * ppm, et.brand.y * ppm);
+    et.frameNumbers.forEach((f) => ctx.fillText(f.text, f.x * ppm, f.y * ppm));
+    if (et.endMark) {
+      ctx.textAlign = et.endMark.align;
+      ctx.fillText('>', et.endMark.x * ppm, et.endMark.y * ppm);
+    }
   }
   ctx.restore();
 

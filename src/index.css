@@ -29,46 +29,52 @@
   --accent-ink: #1a1205;
   --ring: #ffb020;
   --danger: #ff6b78;
+  --spark: #ffb020;
+  --coral: #ff6b78;
   --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px rgba(0, 0, 0, 0.5);
   --stage: radial-gradient(60% 60% at 50% 40%, #1b1b21 0%, #0b0b0d 100%);
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f2f2f0;
-    --bg-2: #eaeae6;
+    --bg: #fbf8f3;
+    --bg-2: #f4eee5;
     --surface: #ffffff;
-    --surface-2: #f6f6f3;
-    --surface-3: #ebebe6;
-    --text: #101013;
-    --muted: #5d5d68;
-    --line: rgba(16, 16, 19, 0.1);
-    --line-strong: rgba(16, 16, 19, 0.22);
-    --accent: #ffb020;
-    --accent-ink: #1a1205;
-    --ring: #a85f00;
-    --danger: #c8283a;
-    --shadow: 0 1px 2px rgba(16, 16, 19, 0.06), 0 12px 28px rgba(16, 16, 19, 0.12);
-    --stage: radial-gradient(60% 60% at 50% 40%, #ffffff 0%, #e4e4df 100%);
+    --surface-2: #f6f1ea;
+    --surface-3: #ebe4d9;
+    --text: #14121f;
+    --muted: #5a5568;
+    --line: rgba(20, 18, 31, 0.11);
+    --line-strong: rgba(20, 18, 31, 0.24);
+    --accent: #5b3df5;
+    --accent-ink: #ffffff;
+    --ring: #4a2de0;
+    --danger: #d12a45;
+    --spark: #c6f432;
+    --coral: #ff4f5e;
+    --shadow: 0 1px 2px rgba(20, 18, 31, 0.06), 0 14px 30px rgba(60, 40, 120, 0.12);
+    --stage: radial-gradient(60% 60% at 50% 40%, #f6efe4 0%, #e5dccd 100%);
     color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #f2f2f0;
-  --bg-2: #eaeae6;
+  --bg: #fbf8f3;
+  --bg-2: #f4eee5;
   --surface: #ffffff;
-  --surface-2: #f6f6f3;
-  --surface-3: #ebebe6;
-  --text: #101013;
-  --muted: #5d5d68;
-  --line: rgba(16, 16, 19, 0.1);
-  --line-strong: rgba(16, 16, 19, 0.22);
-  --accent: #ffb020;
-  --accent-ink: #1a1205;
-  --ring: #a85f00;
-  --danger: #c8283a;
-  --shadow: 0 1px 2px rgba(16, 16, 19, 0.06), 0 12px 28px rgba(16, 16, 19, 0.12);
-  --stage: radial-gradient(60% 60% at 50% 40%, #ffffff 0%, #e4e4df 100%);
+  --surface-2: #f6f1ea;
+  --surface-3: #ebe4d9;
+  --text: #14121f;
+  --muted: #5a5568;
+  --line: rgba(20, 18, 31, 0.11);
+  --line-strong: rgba(20, 18, 31, 0.24);
+  --accent: #5b3df5;
+  --accent-ink: #ffffff;
+  --ring: #4a2de0;
+  --danger: #d12a45;
+  --spark: #c6f432;
+  --coral: #ff4f5e;
+  --shadow: 0 1px 2px rgba(20, 18, 31, 0.06), 0 14px 30px rgba(60, 40, 120, 0.12);
+  --stage: radial-gradient(60% 60% at 50% 40%, #f6efe4 0%, #e5dccd 100%);
   color-scheme: light;
 }
 
@@ -179,6 +185,16 @@ input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .sr-only-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .stage-bg { background: var(--stage); }
+/* hero colour blobs: transform-only drift, hairline-calm */
+.blob { position: absolute; border-radius: 50%; pointer-events: none; will-change: transform; }
+@keyframes drift-a { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(5%,4%,0) scale(1.08); } }
+@keyframes drift-b { 0%,100% { transform: translate3d(0,0,0) scale(1.05); } 50% { transform: translate3d(-6%,-3%,0) scale(0.96); } }
+.drift-a { animation: drift-a 14s ease-in-out infinite; }
+.drift-b { animation: drift-b 17s ease-in-out infinite; }
+@keyframes pop-in { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+.pop-in { animation: pop-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes confetti-fall { 0% { transform: translate3d(0,-10vh,0) rotate(0); opacity: 1; } 100% { transform: translate3d(var(--dx,0),70vh,0) rotate(var(--rot,360deg)); opacity: 0; } }
+.confetti { position: fixed; top: 0; width: 10px; height: 14px; border-radius: 2px; pointer-events: none; z-index: 60; animation: confetti-fall 1.4s cubic-bezier(0.2,0.7,0.4,1) forwards; }
 .checker { background-image: conic-gradient(var(--surface-3) 25%, var(--surface-2) 0 50%, var(--surface-3) 0 75%, var(--surface-2) 0); background-size: 12px 12px; }
 
 /* hero: the strip feeds out of the slot one frame at a time */

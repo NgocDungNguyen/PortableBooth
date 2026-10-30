@@ -3,6 +3,7 @@ import type { FormatId } from './film/types';
 import { StudioProvider, useStudio } from './state/studio';
 import { Home } from './ui/Home';
 import { Toast } from './ui/Toast';
+import { ThemeProvider } from './ui/ThemeToggle';
 
 const Studio = lazy(() => import('./ui/Studio'));
 
@@ -44,6 +45,7 @@ function Router() {
 
 export function App() {
   return (
+    <ThemeProvider>
     <StudioProvider>
       <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }} className="sr-only-text focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-accent focus:p-3 focus:font-semibold focus:text-accentink">
         Skip to content
@@ -53,5 +55,6 @@ export function App() {
       </main>
       <Toast />
     </StudioProvider>
+    </ThemeProvider>
   );
 }

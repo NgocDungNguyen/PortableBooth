@@ -1,4 +1,6 @@
 export type FormatId = 'strip' | 'instant' | 'film35';
+/** portrait = tall (real film stock, print); landscape = wide (for sharing) */
+export type Orientation = 'portrait' | 'landscape';
 export type FontId = 'sans' | 'bold' | 'serif' | 'condensed' | 'wide' | 'mono' | 'type' | 'script' | 'marker' | 'pixel';
 export type Blend = 'normal' | 'multiply' | 'screen' | 'overlay';
 
@@ -94,6 +96,8 @@ export interface OverlayRef {
 export interface FilmDoc {
   v: 2;
   format: FormatId;
+  /** each (format, orientation) pair has its own hand-built geometry; missing = portrait */
+  orientation: Orientation;
   frames: number;
   frameStyle: string;
   frameColor: string;

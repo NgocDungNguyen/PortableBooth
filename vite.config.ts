@@ -31,6 +31,8 @@ function cspPlugin(): Plugin {
 }
 
 export default defineConfig({
+  // relative asset URLs so the build works from any sub-path (GitHub Pages, a CDN folder...)
+  base: './',
   plugins: [react(), tailwindcss(), cspPlugin()],
   build: { target: 'es2022', sourcemap: false },
   test: { environment: 'node', include: ['src/**/*.test.ts'] },

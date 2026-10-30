@@ -1,6 +1,6 @@
-import { FORMATS } from './layout';
+import { computeLayout, defaultFramesFor, frameOptionsFor, FORMATS, isOrientation, nearestFrames } from './layout';
 import { filterById } from './filters';
-import type { AdjustParams, Blend, Crop, FilmDoc, FontId, FormatId, Item, Outline, SlotState, StickerItem, TextItem, WidgetItem } from './types';
+import type { AdjustParams, Blend, Crop, FilmDoc, FontId, FormatId, Item, Orientation, Outline, SlotState, StickerItem, TextItem, WidgetItem } from './types';
 import { parseStickerId } from '../assets/library';
 import { FRAME_STYLES } from '../render/frames';
 import { OVERLAYS } from '../render/overlays';
@@ -54,29 +54,54 @@ export const todayISO = (): string => new Date().toISOString().slice(0, 10);
 const emptySlot = (): SlotState => ({ photoId: null, zoom: 1, ox: 0, oy: 0, filterId: null });
 export const NO_CROP: Crop = { l: 0, t: 0, r: 0, b: 0 };
 
-export function createDoc(format: FormatId, frames?: number): FilmDoc {
+export function createDoc(format: FormatId, frames?: number, orientation: Orientation = 'portrait'): FilmDoc {
   const meta = FORMATS[format];
-  const n = frames && meta.frameOptions.includes(frames) ? frames : meta.defaultFrames;
+  const o: Orientation = isOrientation(orientation) ? orientation : 'portrait';
+  const n = frames && frameOptionsFor(format, o).includes(frames) ? frames : defaultFramesFor(format, o);
   return {
-    v: 2, format, frames: n, frameStyle: format === 'film35' ? 'noise-film' : 'plain', frameColor: meta.defaultColor, frameColor2: '#17163A',
+    v: 2, format, orientation: o, frames: n, frameStyle: format === 'film35' ? 'noise-film' : 'plain', frameColor: meta.defaultColor, frameColor2: '#17163A',
     corners: meta.defaultCorners, dateStamp: true, brandMark: true, date: todayISO(), filterId: 'original',
     adjust: { ...DEFAULT_ADJUST }, overlays: [], slots: Array.from({ length: n }, emptySlot), items: [],
   };
 }
 
-/** Switch format / frame count, keeping photos that still fit. */
+/** Switch format / frame count (in the doc's orientation), keeping photos that still fit. */
 export function reshape(doc: FilmDoc, format: FormatId, frames?: number): FilmDoc {
   const meta = FORMATS[format];
-  const n = frames && meta.frameOptions.includes(frames) ? frames : meta.defaultFrames;
+  const o = doc.orientation ?? 'portrait';
+  const n = frames && frameOptionsFor(format, o).includes(frames) ? frames : defaultFramesFor(format, o);
   const slots = Array.from({ length: n }, (_, i) => doc.slots[i] ?? emptySlot());
   const formatChanged = format !== doc.format;
   return {
-    ...doc, format, frames: n, slots,
+    ...doc, format, orientation: o, frames: n, slots,
     frameColor: formatChanged ? meta.defaultColor : doc.frameColor,
     frameStyle: formatChanged ? (format === 'film35' ? 'noise-film' : 'plain') : doc.frameStyle,
     corners: formatChanged ? meta.defaultCorners : doc.corners,
     items: formatChanged ? [] : doc.items,
   };
+}
+
+/**
+ * Turn the film tall <-> wide. Photos stay in their slot index (slots beyond the new count are dropped), the look is kept,
+ * and every element is remapped proportionally so nothing ends up off the film.
+ */
+export function setOrientation(doc: FilmDoc, orientation: Orientation): FilmDoc {
+  const from = doc.orientation ?? 'portrait';
+  if (!isOrientation(orientation) || orientation === from) return doc.orientation ? doc : { ...doc, orientation: from };
+  const frames = nearestFrames(doc.format, orientation, doc.frames);
+  const a = computeLayout(doc.format, doc.frames, doc.corners, from);
+  const b = computeLayout(doc.format, frames, doc.corners, orientation);
+  const kx = b.widthMm / a.widthMm;
+  const ky = b.heightMm / a.heightMm;
+  const k = Math.min(kx, ky);
+  const items = doc.items.map((it) => ({
+    ...it,
+    x: clamp(it.x * kx, 0, b.widthMm),
+    y: clamp(it.y * ky, 0, b.heightMm),
+    size: clamp(it.size * k, 2, 200),
+  }));
+  const slots = Array.from({ length: frames }, (_, i) => doc.slots[i] ?? emptySlot());
+  return { ...doc, orientation, frames, slots, items };
 }
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -128,7 +153,8 @@ function sanitizeItem(it: Item): Item | null {
 export function sanitizeDoc(d: FilmDoc): FilmDoc {
   const meta = FORMATS[d.format] ?? FORMATS.strip;
   const format = FORMATS[d.format] ? d.format : 'strip';
-  const frames = meta.frameOptions.includes(d.frames) ? d.frames : meta.defaultFrames;
+  const orientation: Orientation = d.orientation === 'landscape' ? 'landscape' : 'portrait';
+  const frames = frameOptionsFor(format, orientation).includes(d.frames) ? d.frames : defaultFramesFor(format, orientation);
   const a = d.adjust ?? DEFAULT_ADJUST;
   const bip = (n: number) => clamp(n, -1, 1);
   const uni = (n: number) => clamp(n, 0, 1);
@@ -141,7 +167,7 @@ export function sanitizeDoc(d: FilmDoc): FilmDoc {
     };
   });
   return {
-    v: 2, format, frames,
+    v: 2, format, orientation, frames,
     frameStyle: FRAME_STYLES.some((f) => f.id === d.frameStyle) ? d.frameStyle : 'plain',
     frameColor: HEX.test(d.frameColor) ? d.frameColor : meta.defaultColor,
     frameColor2: HEX.test(d.frameColor2) ? d.frameColor2 : '#17163A',

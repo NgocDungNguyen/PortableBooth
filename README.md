@@ -24,6 +24,12 @@ npm run packs        # regenerate the lazy icon/emoji packs from the Iconify JSO
 npm run e2e          # Playwright smoke test (needs `npm run build && npm run preview`)
 ```
 
+## Hosting (and why the camera needs it)
+The live camera only works on a normal page served over https. Inside a sandboxed preview/iframe the browser blocks it (the app then
+offers "Take photo with phone camera", which opens the phone's own camera app and works everywhere).
+`.github/workflows/pages.yml` builds and deploys `dist/` to GitHub Pages: merge to `main`, then in the repo go to
+Settings > Pages > Source: "GitHub Actions". Any static host works (Cloudflare Pages, Netlify): publish `dist/` and keep the headers in `public/_headers`.
+
 ## How it works
 - `src/film` – the film as plain data in **millimetres** (`FilmDoc`), pure layout maths, filters, undo/redo.
 - `src/render` – one renderer for preview *and* export: Canvas 2D composition (frames, overlays, elements) + a WebGL film pass
