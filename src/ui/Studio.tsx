@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Camera, ChevronDown, ChevronUp, Download, Film, Frame, Home, Layers, Redo2, ShieldX, Smile, Sparkles, Type, Undo2 } from 'lucide-react';
+import { Camera, ChevronDown, ChevronUp, Download, Film, Frame, Home, Layers, MoreHorizontal, Redo2, ShieldX, Smile, Sparkles, Type, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { filledCount, isComplete } from '../film/doc';
 import { useStudio, type Tool } from '../state/studio';
@@ -39,6 +39,39 @@ function ToolBody({ tool }: { tool: Tool }) {
   }
 }
 
+/** phone header: theme + clear live in a small menu so the Export button always fits */
+function MoreMenu({ onClear }: { onClear: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+  return (
+    <div ref={ref} className="relative sm:hidden">
+      <button className="btn btn-icon btn-ghost" aria-haspopup="true" aria-expanded={open} aria-label="More" onClick={() => setOpen((o) => !o)}>
+        <MoreHorizontal size={20} aria-hidden />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 flex w-60 flex-col gap-2 rounded-xl border border-line2 bg-surface p-3 shadow-[var(--shadow)]">
+          <span className="label">Theme</span>
+          <ThemeToggle className="w-full [&>button]:flex-1" />
+          <button className="btn btn-ghost justify-start" onClick={() => { setOpen(false); onClear(); }}>
+            <ShieldX size={18} aria-hidden /> Clear everything
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudioInner() {
   const { doc, tool, setTool, selection, setSelection, undo, redo, canUndo, canRedo, clearAll, setExportOpen } = useStudio();
   const reduce = useReducedMotion();
@@ -65,7 +98,8 @@ function StudioInner() {
         <ThemeToggle className="mr-1 hidden sm:inline-flex" />
         <button className="btn btn-icon btn-ghost" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo"><Undo2 size={20} aria-hidden /></button>
         <button className="btn btn-icon btn-ghost" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo"><Redo2 size={20} aria-hidden /></button>
-        <button className="btn btn-icon btn-ghost" onClick={() => setConfirm(true)} aria-label="Clear everything" title="Clear everything"><ShieldX size={20} aria-hidden /></button>
+        <button className="btn btn-icon btn-ghost hidden sm:inline-flex" onClick={() => setConfirm(true)} aria-label="Clear everything" title="Clear everything"><ShieldX size={20} aria-hidden /></button>
+        <MoreMenu onClear={() => setConfirm(true)} />
         {!complete && <span className="num mr-1 text-xs text-muted" aria-label={`${left} photo${left === 1 ? '' : 's'} still to add`}>{filledCount(doc)}/{doc.slots.length}</span>}
         <button className="btn btn-primary ml-1" onClick={() => setExportOpen(true)} disabled={!complete} aria-label={complete ? 'Export' : `Export (add ${left} more photo${left === 1 ? '' : 's'} first)`}>
           <Download size={18} aria-hidden /> Export
