@@ -39,6 +39,7 @@ function waitFor(url, ms = 60000) {
     await waitFor(`http://localhost:${PORT}/`);
     await new Promise((r) => setTimeout(r, 3000));
     for (const s of ['samples.cjs', 'films.cjs', 'shots.cjs', 'record.cjs']) run('node', [path.join(__dirname, s)]);
+    run('python3', [path.join(AD, 'tools', 'lag.py')]);
     fs.writeFileSync(path.join(AD, 'public', 'cap', 'SOURCE'), `${sha}\n`);
   } finally {
     try { process.kill(-vite.pid); } catch {}

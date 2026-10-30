@@ -57,10 +57,10 @@ export const SEG: Record<string, Seg> = {
   film: { clip: 'phone-film', at: S.film, dur: S.pose - S.film, from: `strip-${(w('strip', 2) - S.film).toFixed(3)}` },
   upload: { clip: 'desk-upload', at: S.upload, dur: S.yours - S.upload, from: 'drag-0.2', to: 'filled+0.4' },
   looks: { clip: 'desk-edit', at: S.looks, dur: S.frames - S.looks, from: 'look1-0.2', to: 'look3+0.45' },
-  frames: { clip: 'desk-edit', at: S.frames, dur: S.colours - S.frames, from: 'frame1-0.15', to: 'frame2+0.6' },
+  frames: { clip: 'desk-edit', at: S.frames, dur: S.colours - S.frames, from: 'frame2-0.12', to: 'frame2+1.0' },
   colours: { clip: 'desk-edit', at: S.colours, dur: S.stickers - S.colours, from: 'colour1-0.1', to: 'colour2+0.55' },
   stickers: { clip: 'desk-edit', at: S.stickers, dur: S.text - S.stickers, from: 'sticker-0.15', to: 'sticker+1.1' },
-  text: { clip: 'desk-edit', at: S.text, dur: S.details - S.text, from: 'type', to: 'textadd+0.7' },
+  text: { clip: 'desk-edit', at: S.text, dur: S.details - S.text, from: 'textadd-0.1', to: 'textadd+1.6' },
   details: { clip: 'desk-edit', at: S.details, dur: S.drag - S.details, from: 'widget-0.3', to: 'widget+1.9' },
   drag: { clip: 'desk-edit', at: S.drag, dur: S.resize - S.drag, from: 'drag-0.12', to: 'dragEnd+0.3' },
   resize: { clip: 'desk-edit', at: S.resize, dur: S.crop - S.resize, from: 'resize-0.1', to: 'resizeEnd+0.3' },
@@ -68,7 +68,7 @@ export const SEG: Record<string, Seg> = {
   tint: { clip: 'desk-edit', at: S.tint, dur: S.everything - S.tint, from: 'tint-0.15', to: 'tint2+0.8' },
   samePhone: { clip: 'phone-edit', at: S.same, dur: S.care - S.same, from: 'look1-0.4', to: 'frame1+0.9' },
   sameDesk: { clip: 'desk-edit', at: S.same, dur: S.care - S.same, from: 'looks', to: 'colour2+0.5' },
-  export: { clip: 'phone-export', at: S.done, dur: S.print - S.done, from: 'export-0.17', to: 'save+1.2' },
+  export: { clip: 'phone-export', at: S.done, dur: S.print - S.done, from: 'export-0.3', to: 'save+0.9' },
 };
 
 // Moments the edit and the music both hit.

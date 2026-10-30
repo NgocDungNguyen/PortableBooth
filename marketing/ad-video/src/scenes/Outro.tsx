@@ -20,8 +20,8 @@ export function Care() {
     ['Never leaves your device', L(w('photos') - 0.1)],
   ];
   const lock = v ? 230 : 200;
-  const listTop = v ? H * 0.42 : H * 0.36;
-  const lockY = v ? H * 0.2 : H * 0.5 - lock / 2;
+  const listTop = v ? H * 0.45 : H * 0.36;
+  const lockY = v ? H * 0.24 : H * 0.5 - lock / 2;
   const lockX = v ? W / 2 - lock / 2 : W * 0.2 - lock / 2;
   const shrink = ramp(t, lines[0][1] - 0.4, lines[0][1]);
   return (
