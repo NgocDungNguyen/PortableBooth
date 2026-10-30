@@ -1,58 +1,62 @@
-# PortableBooth: 60-second ad
+# PortableBooth: commercial (75–85 s)
 
 **Voice-over script and storyboard.** Record the voice in ElevenLabs first. The video is edited to that recording.
 
-## 1. Paste this into ElevenLabs
-
-Use the block as it stands. The `<break>` tags are ElevenLabs pause tags. It runs to about 130 words, which is roughly 52 to 56 seconds of speech, leaving room for music at the start and end.
+## 1. Paste this into ElevenLabs (Eleven v3, audio-tag format)
 
 ```text
-Remember the photobooth? <break time="0.6s" />
-The tiny curtain. <break time="0.3s" /> The flash. <break time="0.3s" /> The strip you kept for years.
+[nostalgic] Remember the photobooth?
 
-<break time="0.8s" />
-Now it lives in your pocket.
+[soft] The tiny curtain… the flash… [short pause] the strip you kept for YEARS.
 
-<break time="0.6s" />
-This is PortableBooth. <break time="0.5s" />
-Pick your film. <break time="0.3s" /> A classic strip, an instant card, or a roll of thirty-five mil.
+[long pause] [excited] Now… it lives in your pocket.
 
-<break time="0.5s" />
-Snap with your camera, <break time="0.2s" /> or drop in your favourite shots.
+[confident] PortableBooth. [short pause] The photobooth that goes where you go.
 
-<break time="0.5s" />
-Then make it yours. <break time="0.3s" /> Forty-two looks. <break time="0.2s" /> Frames, stickers, text, <break time="0.2s" /> and all the little details.
+[warm] Start by picking your film — a classic strip, an instant card, or a roll of thirty-five mil.
 
-<break time="0.7s" />
-Same booth on your phone, <break time="0.2s" /> same booth on your laptop.
+Keep it TALL for printing… or go WIDE for your feed.
 
-<break time="0.6s" />
-And it's private. <break time="0.3s" /> No account. <break time="0.3s" /> Nothing uploaded. <break time="0.3s" /> Your photos never leave your device.
+[playful] Then strike a pose. [short pause] Three… two… one… [excited] SNAP!
 
-<break time="0.7s" />
-Save it. <break time="0.3s" /> Print it. <break time="0.3s" /> AirDrop it to your friends.
+[warm] Or drop in your favourite shots, straight from your camera roll.
 
-<break time="0.8s" />
-PortableBooth. <break time="0.4s" /> The photobooth that goes where you go.
+[excited] Now make it YOURS. [short pause] Forty-two looks… frames… colours… stickers, text, and all the little details.
+
+[playful] Drag it, resize it, crop it, tint it — [short pause] EVERYTHING is editable.
+
+[confident] Same booth on your phone. [short pause] Same booth on your laptop.
+
+[long pause] [serious] And here's the part we care about most.
+
+[calm] No account. [short pause] No uploads. [short pause] Your photos NEVER leave your device.
+
+[excited] When you're done… save it, print it, or send it to a friend nearby — [short pause] phone to phone, iPhone or Android.
+
+[warm] They scan the code… and your strip lands right on their screen.
+
+[long pause] [proud] Made for the moments worth keeping.
+
+[confident] PortableBooth. [short pause] Free, right in your browser. [short pause] [warm] Go make some memories.
 ```
+
+### Notes on the format
+
+- **Audio tags** such as `[excited]`, `[warm]` and `[serious]` set the delivery of the line that follows them.
+- **Pauses:** `[short pause]` and `[long pause]` add pauses; `…` gives a natural trailing breath.
+- **CAPITALS** mark the stressed word.
+- **"PortableBooth"** is spoken as one word ("portable booth"). If v3 stumbles on it, write it as `Portable Booth`.
 
 ### Voice settings
 
-- **Voice:** a warm, young, natural voice, close-mic and conversational, not "announcer". Female or male both work. Good library starting points are "Jessica" or "Charlotte" (female) and "Liam" or "Chris" (male); audition 2 or 3.
-- **Model:** Eleven v3 or Multilingual v2.
-- **Sliders:**
-
-  | Setting | Value |
-  |---|---|
-  | Stability | ~45% |
-  | Similarity | ~75% |
-  | Style | ~25% |
-  | Speaker boost | on |
-  | Speed | 1.0 (0.95 if it runs past 58 s) |
-
+- **Model:** Eleven v3, since audio tags only work on v3.
+- **Voice:** warm, young and conversational, not "announcer". Audition 2 or 3 voices that respond well to tags.
+- **Stability:** "Creative" or "Natural". "Robust" ignores most tags.
+- **Length:** the script is about 190 words, roughly **75–85 s**.
+  - Too long: drop the line "Keep it TALL for printing… or go WIDE for your feed."
+  - Too short: raise the Speed setting slightly instead of adding text.
+- **Generate:** try 2 or 3 takes and keep the best. Lines from different takes can be mixed; I'll join them in the edit.
 - **Export:** MP3 at 44.1 kHz, 192 kbps or higher. A WAV is even better.
-- **Before you send it:** listen to the full take. If a line sounds flat, regenerate that line only and send me the takes. I'll join them in the edit.
-- **Optional Vietnamese version:** I can translate the script so you have a second ad for local audiences.
 
 ## 2. Storyboard
 
@@ -62,7 +66,7 @@ The ad has three tracks:
 - **Text:** burned-in captions, written for viewers who watch muted.
 - **Voice-over (VO):** the spoken line.
 
-Times are approximate. I'll lock the cuts to your real recording.
+Times are approximate. I'll lock every cut to your real recording.
 
 The video uses the real app (screen captures of the desktop and phone), animated device mockups, and the app's own fonts and colours. It comes in two cuts:
 
@@ -71,51 +75,52 @@ The video uses the real app (screen captures of the desktop and phone), animated
 
 | Time | On screen | Text | VO |
 |---|---|---|---|
-| 0–3 s | Black. A camera flash fills the frame, then a printed 4-frame strip drops into view, spinning slowly. Shutter sound. | **Remember the photobooth?** | "Remember the photobooth?" |
-| 3–7 s | Quick 3-shot montage: curtain sways (illustrated), flash pops, an old strip pinned to a wall. | the curtain · the flash · the strip | "The tiny curtain. The flash. The strip you kept for years." |
-| 7–10 s | The strip zooms *into* a phone screen. The phone floats on a soft amber gradient. Beat drop. | **now it lives in your pocket** | "Now it lives in your pocket." |
-| 10–13 s | Logo reveal. "PortableBooth" types on in Bricolage, with the app's amber/violet sparks. | PortableBooth | "This is PortableBooth." |
-| 13–19 s | **Phone demo:** the Film tab. A finger taps Strip, then Instant, then Film roll, then flips Print (tall) to Share (wide). The films morph. | Pick your film | "Pick your film…" |
-| 19–25 s | **Phone demo:** camera viewfinder, 3-2-1, flash. Photos drop into the slots. Split-screen with a **laptop** where photos are dragged in. | Snap or upload | "Snap with your camera, or drop in your favourite shots." |
-| 25–33 s | **Desktop demo, fast cuts every ~1 s:** Looks grid; the film changes look 4 times. Frame colours swap. A sticker is dragged in and resized. Text is typed. A ticket widget is placed. | 42 looks · frames · stickers · text | "Then make it yours. Forty-two looks. Frames, stickers, text, and all the little details." |
-| 33–37 s | Phone and laptop side by side, editing the *same* film. A sync-style wipe between them. | phone + laptop | "Same booth on your phone, same booth on your laptop." |
-| 37–44 s | Calm beat (music drops to pads). A lock icon. Three lines tick in one by one. | ✓ no account ✓ nothing uploaded ✓ stays on your device | "And it's private…" |
-| 44–51 s | Export sheet slides up. Save PNG; the strip *prints* out of a slot (paper animation). Two phones touch and the share sheet pops. | Save · Print · Share | "Save it. Print it. AirDrop it to your friends." |
-| 51–57 s | Hero end card: tall strip, wide strip and instant card fan out on a tabletop. Logo plus URL. | **PortableBooth**, free in your browser, [your link] | "PortableBooth. The photobooth that goes where you go." |
-| 57–60 s | **Loop out:** the end card's strip flashes white, which matches frame 1, so the video loops seamlessly. | (the URL stays) | music hit, no VO |
+| 0–3 s | Black. A camera flash fills the frame; a printed 4-frame strip drops in, spinning slowly. Shutter sound. | **Remember the photobooth?** | "Remember the photobooth?" |
+| 3–8 s | Quick montage: curtain sways (illustrated), flash pops, an old strip pinned to a wall. | the curtain · the flash · the strip | "The tiny curtain… the flash…" |
+| 8–12 s | The strip zooms *into* a phone screen. The phone floats on an amber gradient. Beat drop. | **now it lives in your pocket** | "Now… it lives in your pocket." |
+| 12–17 s | Logo reveal in the app's fonts and colour sparks. | PortableBooth | "PortableBooth…" |
+| 17–27 s | **Phone demo:** the Film tab. A finger taps Strip, Instant, Film roll, then flips Tall to Wide and the films morph. | Pick your film · tall to print · wide to post | "Start by picking your film…" |
+| 27–35 s | **Phone demo:** viewfinder, 3-2-1 synced to the VO, flash, photos drop into the slots. | 3 · 2 · 1 · SNAP | "Then strike a pose…" |
+| 35–39 s | **Laptop demo:** photos dragged in from a folder. | or upload | "Or drop in your favourite shots…" |
+| 39–51 s | **Desktop demo, fast cuts on the beat:** Looks grid (the film changes 4 looks), frame colours, a sticker dragged and resized, text typed, a ticket widget placed, crop and tint. | 42 looks · frames · stickers · text · everything editable | "Now make it YOURS…" |
+| 51–56 s | Phone and laptop side by side, editing the same kind of film. | phone + laptop | "Same booth on your phone…" |
+| 56–66 s | Music breaks down to soft pads. A lock icon. Three lines tick in one by one. | ✓ no account ✓ no uploads ✓ stays on your device | "And here's the part we care about most…" |
+| 66–76 s | Export sheet slides up; Save, then the strip *prints* out of a slot. Two phones (one iPhone-style, one Android-style, no logos) side by side: a QR on one, scanned by the other, the strip flies across with a progress ring. | Save · Print · Send to a friend nearby | "When you're done… save it, print it…" |
+| 76–83 s | Hero end card: tall strip, wide strip and instant card fan out on a tabletop. Logo plus URL. | **PortableBooth**, free in your browser, [your link] | "Made for the moments worth keeping… PortableBooth…" |
+| 83–85 s | **Loop out:** the end-card strip flashes white, which matches frame 1. | (the URL stays) | music hit |
 
 ### Music
 
 An original track, made to fit your voice-over once I have it. It follows an emotional arc:
 
-| Time | Feel |
+| Section | Feel |
 |---|---|
-| 0–7 s | Nostalgic, soft keys and vinyl texture |
-| ~7 s | Beat drops |
-| 13–33 s | Upbeat indie-pop/house, 118–122 BPM, cuts on the beat |
-| 37–44 s | Breaks down for "private" |
-| 44 s | Builds into a final hit |
-| 51–60 s | Lands on the logo |
+| Opening | Nostalgic soft keys and vinyl texture |
+| "pocket" | Beat drops |
+| Demos | Upbeat indie-pop/house, about 120 BPM, cuts on the beat |
+| "the part we care about most" | Breakdown |
+| Sharing | Builds into a final hit |
+| Logo | Lands on the logo |
 
 The music is ducked under the voice.
 
 ### Sound design
 
-Shutter clicks, flash pops, a printer whirr, a soft UI tick on every tap, and a "whoosh" on transitions.
+Shutter clicks, flash pops, a printer whirr, soft UI ticks on taps, transition whooshes, and a chime when the strip arrives on the second phone.
 
 ## 3. Other first lines to test (same visuals)
 
-1. "Remember the photobooth?" (the one in the script)
-2. "Your camera roll deserves better than a grid."
-3. "Photobooth strips. No booth. No queue."
-4. "I made this photo strip on my phone in thirty seconds."
-5. "A photobooth that never sees your photos."
+1. `[nostalgic] Remember the photobooth?` (the one in the script)
+2. `[playful] Your camera roll deserves better than a grid.`
+3. `[excited] Photobooth strips. [short pause] No booth. [short pause] No queue.`
+4. `[confident] I made this photo strip on my phone… in thirty seconds.`
+5. `[serious] A photobooth that NEVER sees your photos.`
 
 ## 4. Honesty notes
 
-- **"AirDrop it":** this works through the phone's share sheet. On iPhone and Mac that is AirDrop; on Android it is Quick Share. If you want the wording to cover both, use "Send it to your friends".
-- **"Print it":** this means a print-ready 300 DPI file today. If you want to tease the PortableBooth printer, add an end-card line "Real prints, coming soon" and only use it once you're comfortable announcing it.
-- **AI voice:** if the voice is from ElevenLabs, some platforms (TikTok, YouTube) ask you to tick an "AI-generated content" label when you upload. The video is fine; it's just disclosure.
+- **"Send it to a friend nearby, phone to phone"** works between any phones (iPhone and Android) on the same Wi-Fi or hotspot, using the app's QR transfer.
+- **"Print it"** means a print-ready 300 DPI file today. Only add a "real prints, coming soon" end-card line once you're ready to announce the PortableBooth printer.
+- **AI voice:** TikTok and YouTube may ask you to tick an "AI-generated content" label when you upload an ElevenLabs voice. It's a disclosure label only.
 - **The app:** every screen shown in the ad is the real app.
 
 ## 5. Next step
