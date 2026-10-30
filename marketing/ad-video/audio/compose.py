@@ -484,17 +484,24 @@ _, vo = wavfile.read(vo_wav)
 vo = vo.astype(np.float64) / 32768.0
 vo = np.pad(vo, (0, max(0, N - len(vo))))[:N]
 
-# music ducked ~9 dB under speech (sidechain by the VO envelope, fast attack, smooth release)
+# music ducked under speech (DUCK_DB, default 5 dB) (sidechain by the VO envelope, fast attack, smooth release)
 envr = np.abs(vo)
 envr = signal.lfilter([1 - np.exp(-1 / (0.015 * SR))], [1, -np.exp(-1 / (0.015 * SR))], envr)
 speech = np.clip((20 * np.log10(envr + 1e-9) + 42) / 12, 0, 1)   # 0 below -42 dBFS, 1 above -30
 hold = signal.lfilter([1 - np.exp(-1 / (0.30 * SR))], [1, -np.exp(-1 / (0.30 * SR))], speech)
 duck = np.maximum(speech, hold)
 duck = signal.lfilter([1 - np.exp(-1 / (0.05 * SR))], [1, -np.exp(-1 / (0.05 * SR))], duck)
-gain_music = 10 ** (-9.0 * np.clip(duck, 0, 1) / 20)
-gain_sfx = 10 ** (-3.0 * np.clip(duck, 0, 1) / 20)
+# Levels (dB, tweak without editing code): MUSIC_DB = music level (0 = default), DUCK_DB = how far music dips under the voice,
+# SFX_DB = sound effects level. e.g. on Windows:  set MUSIC_DB=3   then render again with --no-capture
+MUSIC_DB = float(os.environ.get('MUSIC_DB', '0'))
+DUCK_DB = float(os.environ.get('DUCK_DB', '5'))
+SFX_DB = float(os.environ.get('SFX_DB', '0'))
+gain_music = 10 ** (-DUCK_DB * np.clip(duck, 0, 1) / 20)
+gain_sfx = 10 ** (-2.0 * np.clip(duck, 0, 1) / 20)
+music_level = 1.05 * 10 ** (MUSIC_DB / 20)   # was 0.55 with a 9 dB duck: the music disappeared under the voice
+sfx_level = 1.25 * 10 ** (SFX_DB / 20)
 
-mix = music * gain_music[:, None] * 0.55 + sfx.x * gain_sfx[:, None] * 0.9 + np.stack([vo, vo], 1) * 1.0
+mix = music * gain_music[:, None] * music_level + sfx.x * gain_sfx[:, None] * sfx_level + np.stack([vo, vo], 1) * 1.0
 mix = hp(mix, 25)
 # gentle final fades
 fade = int(0.01 * SR); mix[:fade] *= np.linspace(0, 1, fade)[:, None]

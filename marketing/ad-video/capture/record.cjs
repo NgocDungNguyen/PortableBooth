@@ -142,7 +142,7 @@ const CLIPS = {
     return s.stop();
   },
 
-  // Phone export: the sheet slides up, Save, then "Send to a nearby phone" (QR offer).
+  // Phone export: the sheet slides up, Save, then "Send to a phone" (the ad only uses up to Save).
   async 'phone-export'() {
     const s = await session('phone-export', PHONE);
     await s.open();
@@ -159,7 +159,12 @@ const CLIPS = {
     const d = await dl;
     if (d) await d.saveAs(path.join(__dirname, '..', 'public', 'films', 'export-from-app.jpg'));
     await sleep(900);
-    await s.tap(p.getByRole('button', { name: /Send to a nearby phone/ }), { mark: 'send' });
+    // optional: label changes in the app must never stop the whole render
+    try {
+      await s.tap(p.getByRole('button', { name: /^Send to a (nearby )?phone/ }), { mark: 'send' });
+    } catch {
+      s.mark('send');
+    }
     await sleep(3500);
     s.mark('qr');
     await sleep(1500);
