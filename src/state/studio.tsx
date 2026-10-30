@@ -5,8 +5,7 @@ import type { FilmDoc, FormatId } from '../film/types';
 import { clearPhotos } from '../media/photos';
 
 export type Selection = { type: 'item'; id: string } | { type: 'slot'; index: number } | null;
-export const STEPS = ['film', 'photos', 'edit', 'export'] as const;
-export type Step = 0 | 1 | 2 | 3;
+export type Tool = 'film' | 'photos' | 'looks' | 'frame' | 'add' | 'text' | 'layers';
 
 interface Studio {
   doc: FilmDoc;
@@ -15,13 +14,12 @@ interface Studio {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  step: Step;
-  setStep: (s: Step) => void;
+  tool: Tool;
+  setTool: (t: Tool) => void;
   selection: Selection;
   setSelection: (s: Selection) => void;
-  /** target slot for the next capture/upload (retake) */
-  targetSlot: number | null;
-  setTargetSlot: (i: number | null) => void;
+  exportOpen: boolean;
+  setExportOpen: (o: boolean) => void;
   startFrom: (format: FormatId, frames?: number, filterId?: string) => void;
   clearAll: () => void;
   toast: (msg: string) => void;
@@ -37,9 +35,9 @@ export const useStudio = (): Studio => {
 
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [h, dispatch] = useReducer(historyReducer, undefined, () => initHistory(createDoc('strip')));
-  const [step, setStep] = useState<Step>(0);
+  const [tool, setTool] = useState<Tool>('photos');
   const [selection, setSelection] = useState<Selection>(null);
-  const [targetSlot, setTargetSlot] = useState<number | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const timer = useRef<number>(0);
 
@@ -54,18 +52,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const startFrom = useCallback((format: FormatId, frames?: number, filterId?: string) => {
     dispatch({ type: 'apply', fn: (d) => ({ ...reshape(d, format, frames), ...(filterId ? { filterId } : {}) }) });
     setSelection(null);
-    setTargetSlot(null);
+    setTool('photos');
   }, []);
 
   const clearAll = useCallback(() => {
     clearPhotos();
     dispatch({ type: 'reset', doc: createDoc('strip') });
     setSelection(null);
-    setTargetSlot(null);
-    setStep(0);
+    setTool('photos');
+    setExportOpen(false);
   }, []);
 
-  // keyboard undo / redo while the studio is mounted
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -83,9 +80,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     () => ({
       doc: h.present, apply, undo: () => dispatch({ type: 'undo' }), redo: () => dispatch({ type: 'redo' }),
       canUndo: h.past.length > 0, canRedo: h.future.length > 0,
-      step, setStep, selection, setSelection, targetSlot, setTargetSlot, startFrom, clearAll, toast, toastMsg,
+      tool, setTool, selection, setSelection, exportOpen, setExportOpen, startFrom, clearAll, toast, toastMsg,
     }),
-    [h, apply, step, selection, targetSlot, startFrom, clearAll, toast, toastMsg],
+    [h, apply, tool, selection, exportOpen, startFrom, clearAll, toast, toastMsg],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -5,17 +5,18 @@ import { useStudio } from '../state/studio';
 export function Toast() {
   const { toastMsg } = useStudio();
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-4" role="status" aria-live="polite">
+    <div className="pointer-events-none fixed inset-x-0 top-16 z-50 flex justify-center px-4" role="status" aria-live="polite">
       <AnimatePresence>
         {toastMsg && (
           <motion.div
             key={toastMsg}
-            initial={{ y: 24, opacity: 0, scale: 0.95 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 12, opacity: 0 }}
-            className="panel flex items-center gap-2 px-4 py-3 font-bold"
+            initial={{ y: -12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -8, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="panel flex items-center gap-2 px-4 py-2.5 text-sm font-medium shadow-[var(--shadow)]"
           >
-            <Info size={20} aria-hidden /> {toastMsg}
+            <Info size={18} aria-hidden className="text-accent" /> {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>

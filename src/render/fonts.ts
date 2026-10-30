@@ -1,4 +1,7 @@
-const FAMILIES = ['"Permanent Marker"', '"Caveat"', '"Special Elite"', '"Bricolage Grotesque Variable"', '"VT323"'];
+const FAMILIES = [
+  '"Geist Variable"', '"Geist Mono Variable"', '"Bricolage Grotesque Variable"', '"Instrument Serif"', '"Bebas Neue"',
+  '"Unbounded Variable"', '"Space Mono"', '"Special Elite"', '"Caveat"', '"Permanent Marker"', '"VT323"',
+];
 
 let pending: Promise<void> | null = null;
 /** Canvas text only uses a font once it is loaded, so wait for them before the first render. */

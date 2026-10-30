@@ -20,6 +20,16 @@ export interface ShaderParams {
   leak: number;
   leakCorner: number;
   intensity: number;
+  /** duotone (luma -> a..b, optionally through mid) blended by `amount`; null = off */
+  duo: { a: [number, number, number]; b: [number, number, number]; amount: number; mid?: [number, number, number] } | null;
+  /** cells across the film width, 0 = off */
+  pixel: number;
+  /** posterize levels, 0 = off */
+  poster: number;
+  scan: number;
+  aber: number;
+  halftone: number;
+  glitch: number;
 }
 
 export function resolveParams(doc: Pick<FilmDoc, 'filterId' | 'adjust'>): ShaderParams {
@@ -38,6 +48,7 @@ export function resolveParams(doc: Pick<FilmDoc, 'filterId' | 'adjust'>): Shader
     shadow: f.shadow, highlight: f.highlight, split: f.split,
     leakColor: f.leakColor, leak: f.leak, leakCorner: f.leakCorner,
     intensity: a.intensity,
+    duo: f.duo, pixel: f.pixel, poster: f.poster, scan: f.scan, aber: f.aber, halftone: f.halftone, glitch: f.glitch,
   };
 }
 
@@ -45,6 +56,8 @@ export function isIdentity(p: ShaderParams): boolean {
   return (
     p.intensity === 0 ||
     (p.brightness === 0 && p.contrast === 0 && p.saturation === 0 && p.warmth === 0 && p.fade === 0 && p.grain === 0 &&
-      p.glow === 0 && p.vignette === 0 && !p.bw && p.split === 0 && p.leak === 0)
+      p.glow === 0 && p.vignette === 0 && !p.bw && p.split === 0 && p.leak === 0 &&
+      (!p.duo || p.duo.amount === 0) && p.pixel === 0 && p.poster === 0 && p.scan === 0 && p.aber === 0 && p.halftone === 0 &&
+      p.glitch === 0)
   );
 }

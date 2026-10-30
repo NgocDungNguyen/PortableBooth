@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDoc, reshape, sanitizeDoc, stampText, MAX_TEXT } from './doc';
+import { createDoc, newSticker, newText, reshape, sanitizeDoc, stampText, MAX_TEXT } from './doc';
 import { historyReducer, initHistory, COALESCE_MS } from './history';
 import type { FilmDoc, TextItem } from './types';
 
@@ -30,16 +30,31 @@ describe('doc', () => {
     } as FilmDoc;
     const s = sanitizeDoc(bad);
     expect(s.frameColor).toBe('#FFFFFF');
+    expect(s.v).toBe(2);
     expect(s.filterId).toBe('original');
     expect(s.adjust.brightness).toBe(1);
     expect(s.adjust.grain).toBe(0);
     expect(s.adjust.intensity).toBe(0);
     expect(s.slots).toHaveLength(4);
-    expect(s.slots[0]).toEqual({ photoId: null, zoom: 3, ox: -1, oy: -1 });
+    expect(s.slots[0]).toEqual({ photoId: null, zoom: 3, ox: -1, oy: -1, filterId: null });
     expect(s.items).toHaveLength(1);
     expect((s.items[0] as TextItem).text).toHaveLength(MAX_TEXT);
-    expect((s.items[0] as TextItem).font).toBe('marker');
+    expect((s.items[0] as TextItem).font).toBe('sans');
     expect(sanitizeDoc(s)).toEqual(s);
+  });
+  it('sanitises element styling (opacity, outline, crop, blend, overlays)', () => {
+    const d = createDoc('strip');
+    const st = { ...newSticker('shapes/star-5', true, 10, 10, 12), opacity: 9, blend: 'nope' as never, outline: { color: 'red', width: 99 }, crop: { l: 0.7, t: 0, r: 0.7, b: 0 } };
+    const tx = { ...newText('hi', '#FFFFFF', 5, 5), tracking: 99, bg: 'x' };
+    const s = sanitizeDoc({ ...d, items: [st, tx], overlays: [{ id: 'nope', opacity: 1 }] });
+    const a = s.items[0] as typeof st;
+    expect(a.opacity).toBe(1);
+    expect(a.blend).toBe('normal');
+    expect(a.outline).toBeNull();
+    expect(a.crop.l + a.crop.r).toBeLessThanOrEqual(0.9 + 1e-9);
+    expect((s.items[1] as typeof tx).tracking).toBe(0.6);
+    expect((s.items[1] as typeof tx).bg).toBeNull();
+    expect(s.overlays).toHaveLength(0);
   });
   it('formats the date stamp', () => {
     expect(stampText('2026-10-30')).toBe("30 10 '26");

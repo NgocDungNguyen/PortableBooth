@@ -1,4 +1,3 @@
-import { loadStickers } from '../assets/stickers';
 import type { FilmDoc } from '../film/types';
 import { ensureFonts } from '../render/fonts';
 import { PPM_300DPI, renderFilm } from '../render/compose';
@@ -20,7 +19,7 @@ const toBlob = (c: HTMLCanvasElement, type: string, q?: number) =>
 
 /** Renders the doc with the exact same pipeline as the preview, then encodes it. */
 export async function exportFilm(doc: FilmDoc, kind: ExportKind): Promise<ExportResult> {
-  await Promise.all([ensureFonts(), loadStickers()]);
+  await ensureFonts();
   const canvas = document.createElement('canvas');
   try {
     const stamp = doc.date.replaceAll('-', '');

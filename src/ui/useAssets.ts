@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { loadStickers } from '../assets/stickers';
 import { ensureFonts } from '../render/fonts';
 
 let ready = false;
-const promise = () => Promise.all([ensureFonts(), loadStickers()]).then(() => {
+const promise = () => ensureFonts().then(() => {
   ready = true;
 });
 
-/** true once fonts + sticker images are ready, so the first canvas render is correct */
+/** true once the fonts are ready, so the first canvas render uses them */
 export function useAssetsReady(): boolean {
   const [ok, setOk] = useState(ready);
   useEffect(() => {

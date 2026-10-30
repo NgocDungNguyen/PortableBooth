@@ -11,7 +11,7 @@ const read = (): Route => (location.hash === '#studio' ? 'studio' : 'home');
 
 function Router() {
   const [route, setRoute] = useState<Route>(read);
-  const { startFrom, setStep } = useStudio();
+  const { startFrom } = useStudio();
 
   useEffect(() => {
     const on = () => setRoute(read());
@@ -27,17 +27,16 @@ function Router() {
     (look?: { format: FormatId; frames?: number; filterId: string }) => {
       if (look) {
         startFrom(look.format, look.frames, look.filterId);
-        setStep(1);
       }
       location.hash = '#studio';
     },
-    [startFrom, setStep],
+    [startFrom],
   );
 
   return route === 'home' ? (
     <Home onStart={start} />
   ) : (
-    <Suspense fallback={<div className="grid min-h-dvh place-items-center" role="status" aria-label="Loading studio"><div className="size-12 animate-spin rounded-full border-4 border-line border-t-lemon" /></div>}>
+    <Suspense fallback={<div className="grid min-h-dvh place-items-center bg-bg" role="status" aria-label="Loading studio"><div className="size-10 animate-spin rounded-full border-2 border-line2 border-t-accent" /></div>}>
       <Studio />
     </Suspense>
   );
@@ -46,7 +45,7 @@ function Router() {
 export function App() {
   return (
     <StudioProvider>
-      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }} className="sr-only-text focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-xl focus:bg-lemon focus:p-3 focus:font-bold focus:text-ink">
+      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }} className="sr-only-text focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-accent focus:p-3 focus:font-semibold focus:text-accentink">
         Skip to content
       </a>
       <main id="main" tabIndex={-1} className="outline-none">

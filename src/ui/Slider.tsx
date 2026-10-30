@@ -2,25 +2,24 @@ import type { ReactNode } from 'react';
 
 interface Props {
   label: string;
-  icon: ReactNode;
+  icon?: ReactNode;
   value: number;
   min: number;
   max: number;
   step?: number;
   onChange: (v: number) => void;
-  /** 0 = show nothing */
   format?: (v: number) => string;
 }
 
-/** Icon + native range input. The label is visually hidden but read by screen readers. */
+/** Labelled native range input (the label is visible: a number alone means nothing). */
 export function Slider({ label, icon, value, min, max, step = 0.01, onChange, format }: Props) {
   const fill = ((value - min) / (max - min)) * 100;
   return (
-    <label className="flex items-center gap-3">
-      <span className="grid size-11 shrink-0 place-items-center rounded-2xl border-2 border-line bg-surface2" title={label}>
+    <label className="grid grid-cols-[5.5rem_1fr_2.75rem] items-center gap-2">
+      <span className="flex items-center gap-2 text-[0.8rem] font-medium text-muted">
         {icon}
+        {label}
       </span>
-      <span className="sr-only-text">{label}</span>
       <input
         type="range"
         min={min}
@@ -32,7 +31,7 @@ export function Slider({ label, icon, value, min, max, step = 0.01, onChange, fo
         aria-label={label}
         aria-valuetext={format ? format(value) : undefined}
       />
-      <output className="w-10 shrink-0 text-right text-sm font-bold tabular-nums text-muted">{format ? format(value) : Math.round(value * 100)}</output>
+      <output className="num text-right text-xs text-muted">{format ? format(value) : Math.round(value * 100)}</output>
     </label>
   );
 }

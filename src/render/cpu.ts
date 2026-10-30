@@ -1,7 +1,7 @@
 import type { Rect } from '../film/types';
 import type { ShaderParams } from './params';
 
-/** Simplified software version of the shader (no glow / light leak), used only if WebGL is unavailable. */
+/** Simplified software version of the shader (no glow / light leak / pixel / halftone / scan / aberration), used only if WebGL is unavailable. */
 export function applyCpu(src: HTMLCanvasElement, p: ShaderParams, slots: Rect[]): HTMLCanvasElement {
   const out = document.createElement('canvas');
   out.width = src.width;
@@ -40,6 +40,21 @@ export function applyCpu(src: HTMLCanvasElement, p: ShaderParams, slots: Rect[])
       const hi = p.split * smooth(0.35, 1, l);
       r += (r * p.highlight[0] - r) * hi; g += (g * p.highlight[1] - g) * hi; b += (b * p.highlight[2] - b) * hi;
       r += (r * 0.84 + 0.08 - r) * p.fade; g += (g * 0.84 + 0.08 - g) * p.fade; b += (b * 0.84 + 0.08 - b) * p.fade;
+      if (p.duo && p.duo.amount > 0) {
+        const dl = Math.min(1, Math.max(0, luma(r, g, b)));
+        const { a: da, b: db } = p.duo;
+        const dm = p.duo.mid ?? [(da[0] + db[0]) / 2, (da[1] + db[1]) / 2, (da[2] + db[2]) / 2];
+        const lo = dl < 0.5;
+        const t = lo ? dl * 2 : dl * 2 - 1;
+        const c0 = lo ? da : dm, c1 = lo ? dm : db;
+        r += (c0[0] + (c1[0] - c0[0]) * t - r) * p.duo.amount;
+        g += (c0[1] + (c1[1] - c0[1]) * t - g) * p.duo.amount;
+        b += (c0[2] + (c1[2] - c0[2]) * t - b) * p.duo.amount;
+      }
+      if (p.poster > 1.5) {
+        const q = (n: number) => Math.floor(Math.min(1, Math.max(0, n)) * p.poster * 0.9999) / (p.poster - 1);
+        r = q(r); g = q(g); b = q(b);
+      }
       const u = x / W, v = y / H;
       for (const s of slots) {
         if (u >= s.x && u <= s.x + s.w && v >= s.y && v <= s.y + s.h) {

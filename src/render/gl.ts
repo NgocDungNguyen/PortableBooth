@@ -15,16 +15,43 @@ varying vec2 vUv;
 uniform sampler2D uTex;
 uniform vec2 uRes;
 uniform float uBright, uContrast, uSat, uWarm, uFade, uGrain, uGlow, uVig, uInt, uSplit, uLeak, uBw, uLeakCorner, uSlotN, uSeed;
-uniform vec3 uShadow, uHigh, uLeakCol;
+uniform float uDuo, uPixel, uPoster, uScan, uAber, uHalf, uGlitch;
+uniform vec3 uShadow, uHigh, uLeakCol, uDuoA, uDuoM, uDuoB;
 uniform vec4 uSlots[4];
 
 float luma(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 
+// sample the photo layer; fully transparent texels (outside the photo slots) fall back to fb
+vec3 tap(vec2 p, vec3 fb){
+  vec4 t = texture2D(uTex, p);
+  return mix(fb, t.rgb, step(0.5, t.a));
+}
+
 void main(){
   vec4 src = texture2D(uTex, vUv);
   if (src.a < 0.002) { gl_FragColor = vec4(0.0); return; }
+  // every effect size is expressed in uv / film-width units so previews and the 300 DPI export match
+  float ratio = uRes.y / uRes.x;
   vec3 c = src.rgb;
+
+  if (uPixel > 0.5 || uAber > 0.0 || uScan > 0.0 || uGlitch > 0.0) {
+    vec2 uv = vUv;
+    if (uGlitch > 0.0) {
+      float coarse = hash(vec2(floor(vUv.y * ratio * 14.0), 3.0 + uSeed));
+      float fine = hash(vec2(floor(vUv.y * ratio * 70.0), 9.0 + uSeed));
+      uv.x += step(0.8, coarse) * (fine - 0.5) * 0.16 * uGlitch;
+    }
+    if (uPixel > 0.5) {
+      float cells = min(uPixel, uRes.x * 0.5);
+      vec2 cs = vec2(1.0 / cells, 1.0 / (cells * ratio));
+      uv = (floor(uv / cs) + 0.5) * cs;
+    }
+    vec2 ao = vec2(uAber * 0.007 + uScan * 0.0035, 0.0) + (vUv - 0.5) * uAber * 0.016;
+    c.r = tap(uv + ao, src.rgb).r;
+    c.g = tap(uv, src.rgb).g;
+    c.b = tap(uv - ao, src.rgb).b;
+  }
 
   c += uBright * 0.25;
   c = (c - 0.5) * (1.0 + uContrast * 0.9) + 0.5;
@@ -49,6 +76,47 @@ void main(){
     }
     vec3 halo = acc / 14.0;
     c += halo * vec3(1.0, 0.5, 0.35) * uGlow * 3.2 + halo * uGlow;
+  }
+
+  if (uDuo > 0.0) {
+    float dl = clamp(luma(c), 0.0, 1.0);
+    vec3 d = mix(mix(uDuoA, uDuoM, dl * 2.0), mix(uDuoM, uDuoB, dl * 2.0 - 1.0), step(0.5, dl));
+    c = mix(c, d, uDuo);
+  }
+
+  if (uPoster > 1.5) {
+    c = floor(clamp(c, 0.0, 1.0) * uPoster * 0.9999) / (uPoster - 1.0);
+  }
+
+  if (uHalf > 0.0) {
+    float cells = min(88.0, uRes.x / 5.0);
+    float sa = 0.5, ca = 0.8660254; // 30 degree screen
+    mat2 R = mat2(ca, -sa, sa, ca);
+    vec2 rp = R * (vec2(vUv.x, vUv.y * ratio) * cells);
+    vec2 id = floor(rp) + 0.5;
+    vec2 q = rp - id;
+    vec2 cp = id * R; // inverse rotation back to film space
+    vec3 hc = tap(vec2(cp.x, cp.y / ratio) / cells, c);
+    hc = (hc - 0.5) * (1.0 + uContrast * 0.9) + 0.5 + uBright * 0.25;
+    float hl = clamp(luma(hc), 0.0, 1.0);
+    float rad = sqrt(1.0 - hl) * 0.7;
+    float aa = cells / uRes.x;
+    float m = (1.0 - smoothstep(rad - aa, rad + aa, length(q))) * smoothstep(0.0, 0.06, rad);
+    vec3 ink = uDuoA;
+    vec3 paper = uDuoB;
+    if (uDuo <= 0.0) {
+      vec3 hue = hc / max(max(hc.r, max(hc.g, hc.b)), 0.05);
+      ink = clamp(hue, 0.0, 1.0) * mix(0.5, 0.95, hl);
+      paper = vec3(0.97, 0.94, 0.88);
+    }
+    c = mix(c, mix(paper, ink, m), uHalf);
+  }
+
+  if (uScan > 0.0) {
+    float lines = min(110.0, uRes.x / 3.0);
+    float sl = 0.5 + 0.5 * sin(vUv.y * ratio * lines * 6.2831853);
+    c *= 1.0 - uScan * 0.36 * sl;
+    c += uScan * 0.03;
   }
 
   for (int i = 0; i < 4; i++) {
@@ -169,6 +237,14 @@ export class FilterGL {
     gl.uniform3fv(this.u('uShadow'), p.shadow);
     gl.uniform3fv(this.u('uHigh'), p.highlight);
     gl.uniform3fv(this.u('uLeakCol'), p.leakColor);
+    const duo = p.duo && p.duo.amount > 0 ? p.duo : null;
+    f('uDuo', duo ? duo.amount : 0);
+    if (duo) {
+      gl.uniform3fv(this.u('uDuoA'), duo.a);
+      gl.uniform3fv(this.u('uDuoB'), duo.b);
+      gl.uniform3fv(this.u('uDuoM'), duo.mid ?? [(duo.a[0] + duo.b[0]) / 2, (duo.a[1] + duo.b[1]) / 2, (duo.a[2] + duo.b[2]) / 2]);
+    }
+    f('uPixel', p.pixel); f('uPoster', p.poster); f('uScan', p.scan); f('uAber', p.aber); f('uHalf', p.halftone); f('uGlitch', p.glitch);
     const flat = new Float32Array(16);
     slots.slice(0, 4).forEach((r, i) => flat.set([r.x, r.y, r.w, r.h], i * 4));
     f('uSlotN', Math.min(4, slots.length));

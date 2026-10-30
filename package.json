@@ -9,13 +9,20 @@
     "build:preview": "vite build --config vite.preview.config.ts && node scripts/make-artifact.mjs",
     "preview": "vite preview",
     "test": "vitest run",
-    "e2e": "node e2e/run.cjs"
+    "e2e": "node e2e/run.cjs",
+    "packs": "node scripts/build-packs.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource-variable/unbounded": "^5.3.0",
+    "@fontsource/bebas-neue": "^5.3.0",
     "@fontsource/caveat": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@fontsource/permanent-marker": "^5.3.0",
+    "@fontsource/space-mono": "^5.3.0",
     "@fontsource/special-elite": "^5.3.0",
     "@fontsource/vt323": "^5.3.0",
     "lucide-react": "^1.65.0",
@@ -24,6 +31,8 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@iconify-json/fluent-emoji-flat": "^1.2.6",
+    "@iconify-json/ph": "^1.2.2",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -1,12 +1,15 @@
-import { fontCss, stampText } from '../film/doc';
+import { stampText } from '../film/doc';
 import { computeLayout } from '../film/layout';
-import type { FilmDoc, Item, Rect, SlotState, TextItem } from '../film/types';
-import { getStickerImage } from '../assets/stickers';
+import type { FilmDoc, Rect, SlotState } from '../film/types';
 import { getPhoto, type Photo } from '../media/photos';
 import { applyCpu } from './cpu';
+import { drawItem } from './elements';
+import { paintFrameBody } from './frames';
 import { FilterGL } from './gl';
+import { drawOverlay } from './overlays';
 import { isIdentity, resolveParams } from './params';
 
+export { itemBox, textWidthMm } from './elements';
 export const PPM_300DPI = 300 / 25.4;
 export const BRAND = 'PortableBooth';
 
@@ -19,31 +22,11 @@ const scratch = (() => {
   return () => (c ??= document.createElement('canvas'));
 })();
 
-let paper: CanvasPattern | null = null;
-function paperPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
-  if (paper) return paper;
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const x = c.getContext('2d');
-  if (!x) return null;
-  const img = x.createImageData(128, 128);
-  let s = 7;
-  for (let i = 0; i < img.data.length; i += 4) {
-    s = (s * 16807) % 2147483647;
-    const v = (s % 255) | 0;
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-    img.data[i + 3] = 255;
-  }
-  x.putImageData(img, 0, 0);
-  paper = ctx.createPattern(c, 'repeat');
-  return paper;
-}
-
 const luminance = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
 };
-export const inkOn = (bg: string) => (luminance(bg) > 0.6 ? '#17163A' : '#FFFFFF');
+export const inkOn = (bg: string) => (luminance(bg) > 0.6 ? '#0F0F12' : '#FFFFFF');
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -58,40 +41,6 @@ export function drawCover(ctx: CanvasRenderingContext2D, ph: Photo, r: Rect, s: 
   const dx = r.x + (r.w - dw) / 2 + (s.ox * (dw - r.w)) / 2;
   const dy = r.y + (r.h - dh) / 2 + (s.oy * (dh - r.h)) / 2;
   ctx.drawImage(ph.canvas, dx, dy, dw, dh);
-}
-
-let measureCtx: CanvasRenderingContext2D | null = null;
-/** width of a text item in mm */
-export function textWidthMm(t: Pick<TextItem, 'text' | 'font' | 'size'>): number {
-  measureCtx ??= document.createElement('canvas').getContext('2d');
-  if (!measureCtx) return t.text.length * t.size * 0.55;
-  measureCtx.font = `100px ${fontCss(t.font)}`;
-  return (measureCtx.measureText(t.text || ' ').width / 100) * t.size;
-}
-export function itemBox(it: Item): { w: number; h: number } {
-  return it.kind === 'sticker' ? { w: it.size, h: it.size } : { w: textWidthMm(it), h: it.size * 1.25 };
-}
-
-function drawItem(ctx: CanvasRenderingContext2D, it: Item, ppm: number) {
-  ctx.save();
-  ctx.translate(it.x * ppm, it.y * ppm);
-  ctx.rotate((it.rot * Math.PI) / 180);
-  if (it.kind === 'sticker') {
-    const img = getStickerImage(it.sticker);
-    if (img) {
-      ctx.shadowColor = 'rgba(23,22,58,0.25)';
-      ctx.shadowBlur = 0.8 * ppm;
-      ctx.shadowOffsetY = 0.4 * ppm;
-      ctx.drawImage(img, (-it.size / 2) * ppm, (-it.size / 2) * ppm, it.size * ppm, it.size * ppm);
-    }
-  } else {
-    ctx.font = `${it.size * ppm}px ${fontCss(it.font)}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = it.color;
-    ctx.fillText(it.text, 0, 0);
-  }
-  ctx.restore();
 }
 
 export interface RenderOptions {
@@ -127,21 +76,8 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
     ctx.fillRect(0, 0, W, H);
   }
 
-  // 1. film body + paper texture
-  ctx.save();
-  roundRect(ctx, 0, 0, W, H, layout.outerRadius * ppm);
-  ctx.fillStyle = doc.frameColor;
-  ctx.fill();
-  ctx.clip();
-  const pat = paperPattern(ctx);
-  if (pat) {
-    ctx.globalAlpha = luminance(doc.frameColor) > 0.5 ? 0.05 : 0.07;
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.fillStyle = pat;
-    ctx.fillRect(0, 0, W, H);
-  }
-  ctx.restore();
-
+  // 1. film body (colour, pattern, edge)
+  paintFrameBody(ctx, W, H, { style: doc.frameStyle, color: doc.frameColor, color2: doc.frameColor2, ppm, radiusMm: layout.outerRadius, seed: 7 });
   const ink = inkOn(doc.frameColor);
 
   // 2. 35mm perforations
@@ -153,55 +89,71 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
     }
   }
 
-  // 3. photos -> filter pass
+  // 3. photos -> filter pass, one pass per distinct filter (film filter + per-photo overrides)
   const slotsPx: Rect[] = layout.slots.map((s) => ({ x: s.x * ppm, y: s.y * ppm, w: s.w * ppm, h: s.h * ppm }));
   const layer = scratch();
   layer.width = W;
   layer.height = H;
   const lctx = layer.getContext('2d');
   if (lctx) {
-    lctx.clearRect(0, 0, W, H);
+    const groups = new Map<string, number[]>();
     doc.slots.forEach((s, i) => {
-      const ph = getPhoto(s.photoId);
-      if (!ph) return;
-      const r = slotsPx[i];
-      lctx.save();
-      roundRect(lctx, r.x, r.y, r.w, r.h, layout.slotRadius * ppm);
-      lctx.clip();
-      drawCover(lctx, ph, r, s);
-      lctx.restore();
+      if (!getPhoto(s.photoId)) return;
+      const id = s.filterId ?? doc.filterId;
+      groups.set(id, [...(groups.get(id) ?? []), i]);
     });
-    const params = resolveParams(doc);
-    const uvSlots = slotsPx.map((r) => ({ x: r.x / W, y: r.y / H, w: r.w / W, h: r.h / H }));
-    let filtered: HTMLCanvasElement = layer;
-    if (!isIdentity(params)) {
-      const viaGL = g ? g.apply(layer, params, uvSlots, 1.7) : null;
-      if (viaGL) {
-        filtered = viaGL;
-      } else if (W * H <= 4_500_000) {
-        filtered = applyCpu(layer, params, uvSlots);
+    groups.forEach((indices, filterId) => {
+      lctx.clearRect(0, 0, W, H);
+      indices.forEach((i) => {
+        const ph = getPhoto(doc.slots[i].photoId)!;
+        const r = slotsPx[i];
+        lctx.save();
+        roundRect(lctx, r.x, r.y, r.w, r.h, layout.slotRadius * ppm);
+        lctx.clip();
+        drawCover(lctx, ph, r, doc.slots[i]);
+        lctx.restore();
+      });
+      const params = resolveParams({ filterId, adjust: doc.adjust });
+      const uvSlots = indices.map((i) => ({ x: slotsPx[i].x / W, y: slotsPx[i].y / H, w: slotsPx[i].w / W, h: slotsPx[i].h / H }));
+      let filtered: HTMLCanvasElement = layer;
+      if (!isIdentity(params)) {
+        const viaGL = g ? g.apply(layer, params, uvSlots, 1.7) : null;
+        if (viaGL) filtered = viaGL;
+        else if (W * H <= 4_500_000) filtered = applyCpu(layer, params, uvSlots);
       }
-    }
-    ctx.drawImage(filtered, 0, 0);
+      ctx.drawImage(filtered, 0, 0);
+    });
 
-    // 4. empty slot placeholders + inner edge
+    // 4. overlays (light leaks, dust, grain...) inside each filled photo
+    if (doc.overlays.length) {
+      doc.slots.forEach((s, i) => {
+        if (!getPhoto(s.photoId)) return;
+        const r = slotsPx[i];
+        ctx.save();
+        roundRect(ctx, r.x, r.y, r.w, r.h, layout.slotRadius * ppm);
+        ctx.clip();
+        doc.overlays.forEach((o, k) => drawOverlay(ctx, o.id, r, o.opacity, 11 + i * 7 + k * 31, ppm));
+        ctx.restore();
+      });
+    }
+
+    // 5. empty slot placeholders + inner edge
     doc.slots.forEach((s, i) => {
       const r = slotsPx[i];
-      if (!getPhoto(s.photoId) && opts.showEmpty) {
+      const has = !!getPhoto(s.photoId);
+      if (!has && opts.showEmpty) {
         roundRect(ctx, r.x, r.y, r.w, r.h, layout.slotRadius * ppm);
-        ctx.fillStyle = luminance(doc.frameColor) > 0.5 ? 'rgba(23,22,58,0.1)' : 'rgba(255,255,255,0.14)';
+        ctx.fillStyle = luminance(doc.frameColor) > 0.5 ? 'rgba(15,15,18,0.07)' : 'rgba(255,255,255,0.1)';
         ctx.fill();
+        ctx.setLineDash([ppm * 1.6, ppm * 1.2]);
         ctx.strokeStyle = ink;
-        ctx.globalAlpha = 0.5;
-        ctx.lineWidth = 0.5 * ppm;
-        ctx.lineCap = 'round';
-        const cx = r.x + r.w / 2, cy = r.y + r.h / 2, a = Math.min(r.w, r.h) * 0.12;
-        ctx.beginPath();
-        ctx.moveTo(cx - a, cy); ctx.lineTo(cx + a, cy); ctx.moveTo(cx, cy - a); ctx.lineTo(cx, cy + a);
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = 0.35 * ppm;
         ctx.stroke();
+        ctx.setLineDash([]);
         ctx.globalAlpha = 1;
       }
-      if (getPhoto(s.photoId) && doc.format === 'instant') {
+      if (has && doc.format === 'instant') {
         roundRect(ctx, r.x, r.y, r.w, r.h, layout.slotRadius * ppm);
         ctx.strokeStyle = 'rgba(0,0,0,0.12)';
         ctx.lineWidth = 0.3 * ppm;
@@ -209,7 +161,7 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
       }
     });
 
-    // 5. date stamp on the last filled photo
+    // 6. date stamp on the last filled photo
     if (doc.dateStamp) {
       let last = -1;
       doc.slots.forEach((s, i) => {
@@ -219,7 +171,7 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
         const r = slotsPx[last];
         const size = Math.min(4.2 * ppm, r.h * 0.12);
         ctx.save();
-        ctx.font = `${size}px "VT323"`;
+        ctx.font = `${size}px "VT323", monospace`;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'alphabetic';
         ctx.shadowColor = 'rgba(255,120,20,0.9)';
@@ -231,22 +183,22 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
     }
   }
 
-  // 6. captions / film edge text
+  // 7. captions / film edge text
   ctx.save();
   ctx.fillStyle = ink;
   ctx.textBaseline = 'middle';
   if (layout.caption && doc.brandMark) {
     const c = layout.caption;
-    const size = (doc.format === 'strip' ? 3.4 : 3.1) * ppm;
-    ctx.font = `700 ${size}px "Bricolage Grotesque Variable"`;
+    const size = (doc.format === 'strip' ? 3.2 : 3) * ppm;
+    ctx.font = `600 ${size}px "Geist Variable", system-ui, sans-serif`;
     ctx.textAlign = doc.format === 'strip' ? 'center' : 'right';
     const bx = doc.format === 'strip' ? (c.x + c.w / 2) * ppm : (c.x + c.w) * ppm;
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = 0.8;
     ctx.fillText(BRAND, bx, (c.y + c.h - 3.4) * ppm);
   }
   if (doc.format === 'film35') {
     ctx.fillStyle = '#FFA726';
-    ctx.font = `${1.9 * ppm}px "Special Elite"`;
+    ctx.font = `${1.9 * ppm}px "Special Elite", monospace`;
     ctx.textAlign = 'left';
     if (doc.brandMark) ctx.fillText(`${BRAND.toUpperCase()} 400`, 8 * ppm, 4.4 * ppm);
     layout.frameNumberYs.forEach((y, i) => ctx.fillText(`> ${i + 1}  ${i + 1}A`, 8 * ppm, y * ppm));
@@ -255,7 +207,7 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
   }
   ctx.restore();
 
-  // 7. stickers + text on top
+  // 8. stickers, widgets, text (array order = layer order)
   for (const it of doc.items) drawItem(ctx, it, ppm);
 
   return { width: W, height: H, ppm, usedWebGL: !!g };
@@ -272,7 +224,7 @@ export function renderFilterThumb(target: HTMLCanvasElement, photo: Photo, filte
   target.width = size;
   target.height = size;
   sctx.clearRect(0, 0, size, size);
-  drawCover(sctx, photo, { x: 0, y: 0, w: size, h: size }, { photoId: null, zoom: 1, ox: 0, oy: 0 });
+  drawCover(sctx, photo, { x: 0, y: 0, w: size, h: size }, { photoId: null, zoom: 1, ox: 0, oy: 0, filterId: null });
   const params = resolveParams({ filterId, adjust: { brightness: 0, contrast: 0, saturation: 0, warmth: 0, fade: 0, grain: 0, glow: 0, vignette: 0, intensity: 1 } });
   const slots = [{ x: 0, y: 0, w: 1, h: 1 }];
   const g = sharedGL();

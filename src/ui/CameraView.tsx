@@ -113,14 +113,14 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
         {/* crop guide: exactly what ends up in the film */}
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <div
-            className="rounded-2xl border-[3px] border-lemon"
+            className="rounded-xl border-2 border-accent"
             style={{ aspectRatio: aspect, width: `min(88%, calc((100dvh - 14rem) * ${aspect}))`, boxShadow: '0 0 0 100vmax rgba(0,0,0,0.55)' }}
           />
         </div>
-        {!ready && <div className="absolute inset-0 grid place-items-center" role="status"><div className="size-12 animate-spin rounded-full border-4 border-white/30 border-t-lemon" aria-label="Starting camera" /></div>}
+        {!ready && <div className="absolute inset-0 grid place-items-center" role="status"><div className="size-12 animate-spin rounded-full border-4 border-white/30 border-t-accent" aria-label="Starting camera" /></div>}
         {count !== null && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <span key={count} className="count-pop font-display text-[min(46vw,18rem)] font-extrabold leading-none text-white drop-shadow-[0_6px_0_rgba(23,22,58,.9)]" aria-hidden>
+            <span key={count} className="count-pop font-display text-[min(40vw,16rem)] font-semibold leading-none text-white drop-shadow-[0_4px_24px_rgba(0,0,0,.6)]" aria-hidden>
               {count}
             </span>
           </div>
@@ -128,10 +128,10 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
         {flash > 0 && <div key={flash} className="flash pointer-events-none absolute inset-0 bg-white" aria-hidden />}
         <div className="sr-only-text" role="status" aria-live="assertive">{count ?? ''}</div>
 
-        <button onClick={onClose} className="btn btn-icon absolute left-4 top-[max(1rem,env(safe-area-inset-top))]" aria-label="Close camera">
+        <button onClick={onClose} className="btn btn-icon absolute left-4 top-[max(1rem,env(safe-area-inset-top))] !bg-black/50 !text-white !border-white/20 backdrop-blur" aria-label="Close camera">
           <X size={26} aria-hidden />
         </button>
-        <button onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))} className="btn btn-icon absolute right-4 top-[max(1rem,env(safe-area-inset-top))]" aria-label="Flip camera" disabled={running}>
+        <button onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))} className="btn btn-icon absolute right-4 top-[max(1rem,env(safe-area-inset-top))] !bg-black/50 !text-white !border-white/20 backdrop-blur" aria-label="Flip camera" disabled={running}>
           <SwitchCamera size={26} aria-hidden />
         </button>
       </div>
@@ -139,16 +139,16 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
       <div className="flex flex-col items-center gap-4 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
         <div className="flex gap-2" role="img" aria-label={`${doneIdx.length} of ${total} photos taken`}>
           {queue.map((q, i) => (
-            <span key={q} className={`size-3.5 rounded-full border-2 border-white transition-colors ${doneIdx.includes(q) ? 'bg-lemon' : i === doneIdx.length && running ? 'animate-pulse bg-white' : 'bg-transparent'}`} />
+            <span key={q} className={`size-3.5 rounded-full border-2 border-white transition-colors ${doneIdx.includes(q) ? 'bg-accent' : i === doneIdx.length && running ? 'animate-pulse bg-white' : 'bg-transparent'}`} />
           ))}
         </div>
         <button
           onClick={running ? stop : sequence}
           disabled={!ready}
           aria-label={running ? 'Stop' : total > 1 ? 'Start photo sequence' : 'Take photo'}
-          className="grid size-[5.5rem] place-items-center rounded-full border-[5px] border-white bg-transparent transition-transform active:scale-90 disabled:opacity-40"
+          className="grid size-[5.5rem] place-items-center rounded-full border-4 border-white/90 bg-transparent transition-transform active:scale-90 disabled:opacity-40"
         >
-          {running ? <span className="size-8 rounded-md bg-pop" /> : <span className="size-[4.2rem] rounded-full bg-lemon" />}
+          {running ? <span className="size-7 rounded-md bg-danger" /> : <span className="size-[4.2rem] rounded-full bg-white" />}
         </button>
       </div>
     </div>
