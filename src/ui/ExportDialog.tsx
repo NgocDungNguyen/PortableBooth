@@ -50,6 +50,9 @@ export function ExportDialog() {
     return p;
   }, [doc]);
   const getFile = useCallback(() => getOut(kind), [getOut, kind]);
+  // the finished file, once rendered: Share needs it in hand so the share sheet opens inside the tap (Safari rule)
+  const [ready, setReady] = useState<{ doc: FilmDoc; kind: ExportKind; out: ExportResult } | null>(null);
+  const out = ready && ready.doc === doc && ready.kind === kind ? ready.out : null;
 
   useEffect(() => {
     const d = ref.current;
@@ -68,9 +71,15 @@ export function ExportDialog() {
 
   useEffect(() => {
     if (!exportOpen) return;
-    const t = setTimeout(() => getOut(kind).catch(() => {}), 250);
-    return () => clearTimeout(t);
-  }, [exportOpen, kind, getOut]);
+    let live = true;
+    const t = setTimeout(() => {
+      getOut(kind).then((o) => live && setReady({ doc, kind, out: o }), () => {});
+    }, 120);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [exportOpen, kind, getOut, doc]);
 
   const closeBeam = () => {
     setBeamOpen(false);
@@ -80,7 +89,7 @@ export function ExportDialog() {
   const save = async () => {
     setBusy('save');
     try {
-      await downloadBlob(await getOut(kind));
+      await downloadBlob(out ?? (await getOut(kind)));
     } catch {
       toast("Couldn't save. Try again");
     } finally {
@@ -88,25 +97,25 @@ export function ExportDialog() {
     }
   };
 
-  const share = async () => {
-    setBusy('share');
+  const share = () => {
+    if (!out) return;
     setNote('');
-    try {
-      const out = await getOut(kind);
-      const r = shareOk ? await shareBlob(out, 'Made with PortableBooth') : 'unsupported';
-      if (r === 'unsupported' || r === 'failed') {
-        await downloadBlob(out);
-        setQrMode('app');
-        setNote('No share sheet in this browser, so we saved the photo. Use Send to a nearby phone, or let them scan the code below to make their own.');
-        requestAnimationFrame(() => {
-          qrHeading.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        });
-      }
-    } catch {
-      toast("Couldn't share. Try Save to device");
-    } finally {
-      setBusy(null);
+    if (!shareOk) {
+      void downloadBlob(out);
+      setQrMode('app');
+      setNote('This browser has no share sheet, so we saved the photo. Use Send to a phone to get it onto another phone.');
+      return;
     }
+    // no await before navigator.share: it must run inside the tap
+    setBusy('share');
+    shareBlob(out)
+      .then((r) => {
+        if (r === 'unsupported') {
+          void downloadBlob(out);
+          setNote("This file type can't be shared here, so we saved it instead.");
+        } else if (r === 'failed') toast("The share sheet didn't open. Tap Share again, or Save to device");
+      })
+      .finally(() => setBusy(null));
   };
 
   const copy = async () => {
@@ -156,8 +165,8 @@ export function ExportDialog() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <ActionCard btnRef={sendRef} icon={<Radio size={20} />} title="Send to a nearby phone" sub="Direct, phone to phone, on the same Wi-Fi" onClick={() => setBeamOpen(true)} disabled={!!busy} />
-            <ActionCard icon={<Share size={20} />} title="Share to nearby devices / apps" sub={shareOk ? 'AirDrop, Quick Share, Nearby Sharing and your apps' : 'No share sheet here: saves the photo instead'} onClick={share} busy={busy === 'share'} disabled={!!busy} />
+            <ActionCard btnRef={sendRef} icon={<Radio size={20} />} title="Send to a phone" sub="They scan a code and get the photo. iPhone or Android, encrypted" onClick={() => setBeamOpen(true)} disabled={!!busy} />
+            <ActionCard icon={<Share size={20} />} title="Share to nearby devices / apps" sub={!out ? 'Preparing your photo…' : shareOk ? 'AirDrop, Quick Share, Nearby Share and your apps' : 'No share sheet here: saves the photo instead'} onClick={share} busy={busy === 'share' || !out} disabled={!!busy || !out} />
             <div className={`grid gap-2 ${copyOk ? 'grid-cols-[1fr_auto]' : ''}`}>
               <button className="btn btn-primary btn-lg whitespace-nowrap" onClick={save} disabled={!!busy}>
                 {busy === 'save' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Download size={20} aria-hidden />} Save to device

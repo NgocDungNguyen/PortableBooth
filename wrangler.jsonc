@@ -1,10 +1,17 @@
-// Cloudflare Workers static assets: `npm run build` makes dist/, `npx wrangler deploy` publishes it.
-// No Worker script runs: it is a pure static site, and dist/_headers (from public/_headers) sets the security headers.
+// Cloudflare Workers: `npm run build` makes dist/, `npx wrangler deploy` publishes it.
+// Static files are served straight from dist/ (dist/_headers, copied from public/_headers, sets the security headers).
+// worker/index.js only handles /beam/*: the end-to-end encrypted relay behind "Send to a phone".
 {
   "name": "portablebooth",
-  "compatibility_date": "2026-10-30",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS"
   },
+  "durable_objects": {
+    "bindings": [{ "name": "BEAM", "class_name": "BeamRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["BeamRoom"] }],
   "observability": { "enabled": false }
 }

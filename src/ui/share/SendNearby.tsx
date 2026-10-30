@@ -1,34 +1,31 @@
-import { ArrowLeft, Loader2, Lock, ScanLine, Wifi } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Link2, Loader2, Lock } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NETWORK_HINT, beamToHash, decodeBeam, startSender, type BeamPhase, type BeamSender } from '../../media/beam';
+import { startSender, type BeamPhase, type BeamSender } from '../../media/beam';
 import type { ExportResult } from '../../media/export';
-import { appUrl } from '../../media/share';
 import { ProgressRing } from './ProgressRing';
 import { QrCode } from './QrCode';
-import { QrScanner } from './QrScanner';
 
-type Step = 'prep' | 'offer' | 'scan' | BeamPhase;
+type Step = 'prep' | BeamPhase;
 
 function failMessage(e: unknown): string {
   const m = e instanceof Error ? e.message : '';
-  if (m === 'no-network') return 'No network found. Connect to Wi-Fi or a hotspot and try again.';
-  if (m === 'unsupported') return "This browser can't send directly. Use Share or Save instead.";
-  if (m === 'bad-code') return "That reply code didn't work. Scan it again.";
-  return `Couldn't reach the other device. ${NETWORK_HINT}`;
+  if (m === 'no-relay') return "Couldn't reach PortableBooth's send service. Check your internet connection and try again.";
+  if (m === 'too-big') return 'This photo is too large to send. Use Save or Share instead.';
+  return m || 'Something went wrong. Try again.';
 }
 
 /**
- * Sender flow: offer QR -> scan the reply QR -> direct WebRTC link on the local network -> chunked transfer with progress.
+ * Sender flow: QR link -> the other phone scans it with its camera -> encrypted photo goes across with progress.
  * Rendered as a view inside the export dialog (no nested modal), so Esc / Back return to the export options.
  */
 export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose: () => void; getFile: () => Promise<ExportResult> }) {
   const [step, setStep] = useState<Step>('prep');
-  const [code, setCode] = useState('');
+  const [link, setLink] = useState('');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
   const sender = useRef<BeamSender | null>(null);
   const run = useRef(0);
-  const scanBtn = useRef<HTMLButtonElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
 
   const stop = () => {
@@ -43,17 +40,21 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
     setStep('prep');
     setProgress(0);
     setError('');
+    setCopied(false);
     try {
-      if (typeof RTCPeerConnection === 'undefined') throw new Error('unsupported');
+      if (typeof WebSocket === 'undefined' || !crypto?.subtle) throw new Error("This browser can't send directly. Use Share or Save instead.");
       const out = await getFile();
       const s = await startSender({ name: out.filename, mime: out.mime, blob: out.blob }, {
-        phase: (p) => me === run.current && setStep(p),
+        phase: (p, msg) => {
+          if (me !== run.current) return;
+          if (msg) setError(msg);
+          setStep(p);
+        },
         progress: (f) => me === run.current && setProgress(f),
       });
       if (me !== run.current) return s.close();
       sender.current = s;
-      setCode(s.offerCode);
-      setStep('offer');
+      setLink(s.link);
     } catch (e) {
       if (me !== run.current) return;
       setError(failMessage(e));
@@ -68,65 +69,50 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
   }, [open, start]);
 
   useEffect(() => {
-    if (step === 'offer') scanBtn.current?.focus();
-    else if (open) title.current?.focus();
-  }, [step, open]);
+    if (open) title.current?.focus();
+  }, [open]);
 
-  const onReply = async (reply: string) => {
-    const s = sender.current;
-    if (!s) return;
-    const me = run.current;
-    setStep('connecting');
+  const copyLink = async () => {
     try {
-      await s.accept(reply);
-    } catch (e) {
-      if (me !== run.current) return;
-      setError(failMessage(e));
-      setStep('failed');
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+    } catch {
+      setCopied(false);
     }
   };
-
-  const link = appUrl() + beamToHash(code);
-  const busy = step === 'connecting' || step === 'transferring';
+  const shareLink = () => {
+    // called straight from the tap so the share sheet is allowed
+    navigator.share?.({ title: 'A photo from PortableBooth', url: link }).catch(() => {});
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <div className="flex items-center gap-2">
         <button className="btn btn-icon btn-ghost -ml-2" onClick={onClose} aria-label="Back to save and share"><ArrowLeft size={20} aria-hidden /></button>
-        <h2 id="beam-send-title" ref={title} tabIndex={-1} className="text-xl font-semibold outline-none">Send to a nearby phone</h2>
+        <h2 id="beam-send-title" ref={title} tabIndex={-1} className="text-xl font-semibold outline-none">Send to a phone</h2>
       </div>
       <div aria-live="polite" className="flex flex-col gap-4">
         {step === 'prep' && (
           <p className="flex items-center justify-center gap-2 py-16 text-muted"><Loader2 className="animate-spin" size={20} aria-hidden /> Getting ready…</p>
         )}
 
-        {step === 'offer' && (
+        {step === 'waiting' && link && (
           <>
-            <ol className="flex flex-col gap-1.5 text-sm">
-              <li><b>1.</b> On the other phone, open the camera and scan this code.</li>
-              <li><b>2.</b> It shows a reply code. Tap <b>Scan reply</b> and point this phone at it.</li>
-            </ol>
-            <QrCode text={link} label="Code for the other phone to scan" className="mx-auto w-full max-w-[18rem] border border-line2 p-1" />
-            <button ref={scanBtn} className="btn btn-primary btn-lg" onClick={() => setStep('scan')}><ScanLine size={20} aria-hidden /> Scan reply</button>
+            <p className="text-sm">Ask your friend to <b>scan this with their phone camera</b>. The photo lands on their screen, iPhone or Android.</p>
+            <QrCode text={link} label="Code for the other phone to scan" className="mx-auto w-full max-w-[17rem] border border-line2 p-1" />
+            <p className="flex items-center justify-center gap-2 text-sm text-muted"><Loader2 className="animate-spin" size={16} aria-hidden /> Waiting for the other phone…</p>
+            <div className={`grid gap-2 ${typeof navigator.share === 'function' ? 'grid-cols-2' : ''}`}>
+              <button className="btn" onClick={copyLink}>{copied ? <Check size={18} aria-hidden /> : <Copy size={18} aria-hidden />} {copied ? 'Link copied' : 'Copy link'}</button>
+              {typeof navigator.share === 'function' && <button className="btn" onClick={shareLink}><Link2 size={18} aria-hidden /> Send link</button>}
+            </div>
+            <p className="text-xs text-muted">Far away? Send the link in any chat. It works once, for 15 minutes.</p>
           </>
         )}
 
-        {step === 'scan' && (
-          <>
-            <p className="text-sm">Point the camera at the code on the other phone.</p>
-            <QrScanner accept={(t) => !!decodeBeam(t, 'a')} onCode={onReply} pasteLabel="Or paste the reply code" />
-            <button className="btn" onClick={() => setStep('offer')}>Back to my code</button>
-          </>
-        )}
-
-        {(busy || step === 'done') && (
+        {(step === 'connecting' || step === 'transferring' || step === 'done') && (
           <div className="flex flex-col items-center gap-3 py-6">
-            {step === 'connecting' ? (
-              <div className="grid size-36 place-items-center"><Loader2 className="animate-spin text-accent" size={40} aria-hidden /></div>
-            ) : (
-              <ProgressRing value={progress} done={step === 'done'} label="Sending" />
-            )}
-            <p className="font-semibold">{step === 'connecting' ? 'Connecting…' : step === 'transferring' ? 'Sending…' : 'Sent!'}</p>
+            <ProgressRing value={progress} done={step === 'done'} label="Sending" />
+            <p className="font-semibold">{step === 'done' ? 'Sent!' : 'Sending…'}</p>
             {step === 'done' && <button className="btn btn-primary btn-lg w-full" onClick={onClose}>Done</button>}
           </div>
         )}
@@ -138,11 +124,8 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
           </div>
         )}
       </div>
-      {(step === 'offer' || step === 'scan') && (
-        <div className="flex flex-col gap-1.5 text-xs text-muted">
-          <p className="flex items-center gap-2"><Wifi size={14} aria-hidden /> {NETWORK_HINT}</p>
-          <p className="flex items-center gap-2"><Lock size={14} aria-hidden /> Goes straight to the other device. Nothing is uploaded.</p>
-        </div>
+      {step === 'waiting' && (
+        <p className="flex items-start gap-2 text-xs text-muted"><Lock size={14} className="mt-0.5 shrink-0" aria-hidden /> End-to-end encrypted. The key is only in this code, so nobody else, not even our server, can see the photo. Nothing is stored.</p>
       )}
     </div>
   );

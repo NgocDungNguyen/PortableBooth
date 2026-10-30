@@ -79,7 +79,8 @@ export async function shareBlob(b: ExportResult, text?: string): Promise<ShareOu
   }
   if (!navigator.canShare?.({ files: [file] })) return 'unsupported';
   try {
-    await navigator.share({ files: [file], title: 'PortableBooth', ...(text ? { text } : {}) });
+    // files only by default: some targets (iOS Messages, chat apps) drop the image when text rides along
+    await navigator.share({ files: [file], ...(text ? { text } : {}) });
     return 'shared';
   } catch (e) {
     return e instanceof DOMException && e.name === 'AbortError' ? 'cancelled' : 'failed';
