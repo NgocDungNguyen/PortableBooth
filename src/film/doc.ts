@@ -122,3 +122,10 @@ export function stampText(iso: string): string {
   const [y, m, day] = iso.split('-');
   return `${day} ${m} '${y.slice(2)}`;
 }
+
+/** Put a photo in a slot, resetting its crop. */
+export function setSlotPhoto(d: FilmDoc, index: number, photoId: string): FilmDoc {
+  if (index < 0 || index >= d.slots.length) return d;
+  return { ...d, slots: d.slots.map((s, i) => (i === index ? { photoId, zoom: 1, ox: 0, oy: 0 } : s)) };
+}
+export const emptySlots = (d: FilmDoc): number[] => d.slots.flatMap((s, i) => (s.photoId ? [] : [i]));

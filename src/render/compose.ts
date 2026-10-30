@@ -260,3 +260,23 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
 
   return { width: W, height: H, ppm, usedWebGL: !!g };
 }
+
+/** Small square preview of one photo under one filter (for the filter picker). */
+export function renderFilterThumb(target: HTMLCanvasElement, photo: Photo, filterId: string, size = 96) {
+  const src = scratch();
+  src.width = size;
+  src.height = size;
+  const sctx = src.getContext('2d');
+  const ctx = target.getContext('2d');
+  if (!sctx || !ctx) return;
+  target.width = size;
+  target.height = size;
+  sctx.clearRect(0, 0, size, size);
+  drawCover(sctx, photo, { x: 0, y: 0, w: size, h: size }, { photoId: null, zoom: 1, ox: 0, oy: 0 });
+  const params = resolveParams({ filterId, adjust: { brightness: 0, contrast: 0, saturation: 0, warmth: 0, fade: 0, grain: 0, glow: 0, vignette: 0, intensity: 1 } });
+  const slots = [{ x: 0, y: 0, w: 1, h: 1 }];
+  const g = sharedGL();
+  const out = isIdentity(params) ? src : (g?.apply(src, params, slots, 1.7) ?? applyCpu(src, params, slots));
+  ctx.clearRect(0, 0, size, size);
+  ctx.drawImage(out, 0, 0);
+}
