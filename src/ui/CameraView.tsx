@@ -2,14 +2,14 @@ import { SwitchCamera, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { setSlotPhoto } from '../film/doc';
 import { computeLayout, slotAspect } from '../film/layout';
-import { CameraFailure, captureFrame, startCamera, stopCamera, type Facing } from '../media/capture';
+import { CameraFailure, captureFrame, classifyCameraError, startCamera, stopCamera, type CameraReason, type Facing } from '../media/capture';
 import { useStudio } from '../state/studio';
 
 interface Props {
   /** slots to fill, in order */
   queue: number[];
   onClose: () => void;
-  onDenied: (reason: 'denied' | 'none' | 'failed') => void;
+  onDenied: (reason: CameraReason) => void;
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -25,18 +25,23 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
   const [flash, setFlash] = useState(0);
   const [running, setRunning] = useState(false);
   const [doneIdx, setDoneIdx] = useState<number[]>([]);
-  const layout = computeLayout(doc.format, doc.frames, doc.corners);
+  const layout = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
   const aspect = slotAspect(layout.slots[queue[0] ?? 0]);
   const mirror = facing === 'user';
 
   // open / re-open the camera
   useEffect(() => {
     let cancelled = false;
+    const onEnded = () => {
+      if (!cancelled) onDenied('failed');
+    };
     setReady(false);
     startCamera(facing)
       .then((s) => {
         if (cancelled) return stopCamera(s);
         stream.current = s;
+        // the stream can die under us (camera unplugged, iOS reclaiming it): show the fallback, not a frozen frame
+        s.getTracks().forEach((t) => t.addEventListener('ended', onEnded));
         const v = video.current;
         if (v) {
           v.srcObject = s;
@@ -44,14 +49,26 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
         }
       })
       .catch((e) => {
-        if (!cancelled) onDenied(e instanceof CameraFailure ? e.code : 'failed');
+        if (!cancelled) onDenied(e instanceof CameraFailure ? e.code : classifyCameraError(e));
       });
     return () => {
       cancelled = true;
+      stream.current?.getTracks().forEach((t) => t.removeEventListener('ended', onEnded));
       stopCamera(stream.current);
       stream.current = null;
     };
   }, [facing, onDenied]);
+
+  // coming back to the tab with a dead stream (backgrounded on iOS): bail out to the fallback
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      const tracks = stream.current?.getTracks() ?? [];
+      if (tracks.length && tracks.every((t) => t.readyState === 'ended')) onDenied('failed');
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [onDenied]);
 
   // leaving cancels any running sequence
   useEffect(() => () => void (run.current += 1), []);
@@ -105,6 +122,7 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
           ref={video}
           playsInline
           muted
+          autoPlay
           onLoadedData={() => setReady(true)}
           className="absolute inset-0 h-full w-full object-cover"
           style={{ transform: mirror ? 'scaleX(-1)' : undefined }}
@@ -117,7 +135,14 @@ export function CameraView({ queue, onClose, onDenied }: Props) {
             style={{ aspectRatio: aspect, width: `min(88%, calc((100dvh - 14rem) * ${aspect}))`, boxShadow: '0 0 0 100vmax rgba(0,0,0,0.55)' }}
           />
         </div>
-        {!ready && <div className="absolute inset-0 grid place-items-center" role="status"><div className="size-12 animate-spin rounded-full border-4 border-white/30 border-t-accent" aria-label="Starting camera" /></div>}
+        {!ready && (
+          <div className="absolute inset-0 grid place-items-center px-6" role="status">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="size-12 animate-spin rounded-full border-4 border-white/30 border-t-accent" aria-label="Starting camera" />
+              <p className="max-w-xs text-sm text-white/80">Allow camera when your browser asks</p>
+            </div>
+          </div>
+        )}
         {count !== null && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
             <span key={count} className="count-pop font-display text-[min(40vw,16rem)] font-semibold leading-none text-white drop-shadow-[0_4px_24px_rgba(0,0,0,.6)]" aria-hidden>

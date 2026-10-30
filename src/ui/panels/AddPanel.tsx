@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { newSticker, newWidget } from '../../film/doc';
+import { computeLayout } from '../../film/layout';
 import { ensureSticker, isMonoSticker, packEntries, packsOf, type Family } from '../../assets/library';
 import { drawWidget, WIDGETS } from '../../render/widgets';
 import { useStudio } from '../../state/studio';
@@ -44,17 +45,22 @@ export function AddPanel() {
     };
   }, [activePack]);
 
+  /** base size for new elements: a share of the smaller side of one photo */
+  const baseSize = () => {
+    const s = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation).slots[0];
+    return s ? Math.min(s.w, s.h) : 40;
+  };
   const addSticker = async (id: string) => {
     await ensureSticker(id);
     const at = drop();
-    const item = newSticker(id, isMonoSticker(id), at.x, at.y, doc.format === 'film35' ? 14 : 15);
+    const item = newSticker(id, isMonoSticker(id), at.x, at.y, Math.round(baseSize() * 0.45 * 2) / 2);
     apply((d) => ({ ...d, items: [...d.items, item] }));
     setSelection({ type: 'item', id: item.id });
   };
   const addWidget = (wid: string) => {
     const def = WIDGETS.find((w) => w.id === wid)!;
     const at = drop();
-    const item = newWidget(wid, def.defaults, at.x, at.y, doc.format === 'film35' ? 32 : 38);
+    const item = newWidget(wid, def.defaults, at.x, at.y, Math.round(baseSize() * 0.9 * 2) / 2);
     apply((d) => ({ ...d, items: [...d.items, item] }));
     setSelection({ type: 'item', id: item.id });
   };

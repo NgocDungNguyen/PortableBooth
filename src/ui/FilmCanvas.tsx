@@ -22,7 +22,7 @@ export function FilmCanvas({ doc, width, showEmpty, label, className = '', child
   const [box, setBox] = useState({ w: 0, h: 0 });
   const ready = useAssetsReady();
   const photosVersion = usePhotosVersion();
-  const layout = computeLayout(doc.format, doc.frames, doc.corners);
+  const layout = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
 
   useLayoutEffect(() => {
     if (width || !wrap.current) return;

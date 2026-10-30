@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createDoc, newSticker, newText, reshape, sanitizeDoc, stampText, MAX_TEXT } from './doc';
+import { createDoc, newSticker, newText, reshape, sanitizeDoc, setOrientation, stampText, MAX_TEXT } from './doc';
 import { historyReducer, initHistory, COALESCE_MS } from './history';
+import { computeLayout, FORMAT_ORDER, frameOptionsFor } from './layout';
 import type { FilmDoc, TextItem } from './types';
 
 describe('doc', () => {
@@ -55,6 +56,85 @@ describe('doc', () => {
     expect((s.items[1] as typeof tx).tracking).toBe(0.6);
     expect((s.items[1] as typeof tx).bg).toBeNull();
     expect(s.overlays).toHaveLength(0);
+  });
+  it('creates portrait docs by default and wide docs on request', () => {
+    expect(createDoc('strip').orientation).toBe('portrait');
+    const w = createDoc('film35', undefined, 'landscape');
+    expect(w.orientation).toBe('landscape');
+    expect(w.frames).toBe(3);
+    expect(createDoc('film35', 4, 'landscape').slots).toHaveLength(4);
+    expect(createDoc('film35', 4).slots).toHaveLength(3);
+    // reshape stays in the doc's orientation
+    expect(reshape(w, 'film35', 4).slots).toHaveLength(4);
+    expect(reshape(w, 'strip').orientation).toBe('landscape');
+  });
+  it('sanitize rejects a bad orientation and accepts the two good ones', () => {
+    const d = createDoc('strip');
+    expect(sanitizeDoc({ ...d, orientation: 'sideways' as never }).orientation).toBe('portrait');
+    expect(sanitizeDoc({ ...d, orientation: undefined as never }).orientation).toBe('portrait');
+    expect(sanitizeDoc({ ...d, orientation: 'landscape' }).orientation).toBe('landscape');
+    // frame counts are validated against the orientation
+    expect(sanitizeDoc({ ...createDoc('film35', 4, 'landscape') }).frames).toBe(4);
+    expect(sanitizeDoc({ ...createDoc('film35', 4, 'landscape'), orientation: 'portrait' }).frames).toBe(3);
+  });
+  it('setOrientation keeps photos, look and elements, and remaps elements into the film', () => {
+    for (const fmt of FORMAT_ORDER) {
+      for (const n of frameOptionsFor(fmt, 'portrait')) {
+        let d = createDoc(fmt, n);
+        d.slots = d.slots.map((s, i) => ({ ...s, photoId: `p${i}`, zoom: 1.5 }));
+        d.filterId = 'noir';
+        d.frameColor = '#D4174A';
+        d.overlays = [];
+        const l0 = computeLayout(fmt, n, d.corners);
+        d = { ...d, items: [newText('hi', '#FFFFFF', l0.widthMm - 1, l0.heightMm - 1), newSticker('shapes/star-5', true, 1, 1, 20)] };
+        const w = setOrientation(d, 'landscape');
+        expect(w.orientation).toBe('landscape');
+        expect(frameOptionsFor(fmt, 'landscape')).toContain(w.frames);
+        expect(w.slots).toHaveLength(w.frames);
+        expect(w.filterId).toBe('noir');
+        expect(w.frameColor).toBe('#D4174A');
+        expect(w.format).toBe(fmt);
+        const kept = Math.min(n, w.frames);
+        expect(w.slots.slice(0, kept).map((s) => s.photoId)).toEqual(d.slots.slice(0, kept).map((s) => s.photoId));
+        expect(w.slots[0].zoom).toBe(1.5);
+        const lw = computeLayout(fmt, w.frames, w.corners, 'landscape');
+        for (const it of w.items) {
+          expect(it.x).toBeGreaterThanOrEqual(0);
+          expect(it.x).toBeLessThanOrEqual(lw.widthMm);
+          expect(it.y).toBeGreaterThanOrEqual(0);
+          expect(it.y).toBeLessThanOrEqual(lw.heightMm);
+          expect(it.size).toBeGreaterThanOrEqual(2);
+        }
+        const back = setOrientation(w, 'portrait');
+        expect(back.orientation).toBe('portrait');
+        const keptBack = Math.min(n, w.frames, back.frames);
+        expect(back.slots.slice(0, keptBack).map((s) => s.photoId)).toEqual(d.slots.slice(0, keptBack).map((s) => s.photoId));
+        const lb = computeLayout(fmt, back.frames, back.corners, 'portrait');
+        for (const it of back.items) {
+          expect(it.x).toBeLessThanOrEqual(lb.widthMm);
+          expect(it.y).toBeLessThanOrEqual(lb.heightMm);
+        }
+        expect(sanitizeDoc(w)).toEqual(w);
+      }
+    }
+  });
+  it('setOrientation loses no photos when the slot count is unchanged, and is a no-op for the same orientation', () => {
+    const d = createDoc('strip', 4);
+    d.slots = d.slots.map((s, i) => ({ ...s, photoId: `p${i}` }));
+    const w = setOrientation(d, 'landscape');
+    expect(w.slots.map((s) => s.photoId)).toEqual(['p0', 'p1', 'p2', 'p3']);
+    expect(setOrientation(d, 'portrait')).toBe(d);
+    // 35mm wide has 3-4 frames: a 2-photo roll grows to 3 and keeps both photos
+    const f = createDoc('film35', 2);
+    f.slots[0].photoId = 'a';
+    f.slots[1].photoId = 'b';
+    const fw = setOrientation(f, 'landscape');
+    expect(fw.frames).toBe(3);
+    expect(fw.slots.map((s) => s.photoId)).toEqual(['a', 'b', null]);
+    // shrinking drops only the extra slot
+    const f4 = createDoc('film35', 4, 'landscape');
+    f4.slots = f4.slots.map((s, i) => ({ ...s, photoId: `q${i}` }));
+    expect(setOrientation(f4, 'portrait').slots.map((s) => s.photoId)).toEqual(['q0', 'q1', 'q2']);
   });
   it('formats the date stamp', () => {
     expect(stampText('2026-10-30')).toBe("30 10 '26");

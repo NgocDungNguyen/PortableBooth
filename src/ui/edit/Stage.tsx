@@ -33,7 +33,7 @@ const stop = (e: React.PointerEvent) => e.stopPropagation();
 export function Stage() {
   const { doc, apply, selection, setSelection, setTool } = useStudio();
   const intake = useIntake();
-  const layout = computeLayout(doc.format, doc.frames, doc.corners);
+  const layout = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
   const drag = useRef<Drag>(null);
   const scale = useRef(1);
   const root = useRef<HTMLDivElement>(null);

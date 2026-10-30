@@ -65,7 +65,7 @@ export function Swatches({ colors, value, onChange, label, allowCustom = true, n
 export function useDropPoint() {
   const { doc, selection } = useStudio();
   return () => {
-    const l = computeLayout(doc.format, doc.frames, doc.corners);
+    const l = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
     const s = selection?.type === 'slot' ? l.slots[selection.index] : undefined;
     const jitter = ((doc.items.length * 7) % 9) - 4;
     return s ? { x: s.x + s.w / 2 + jitter, y: s.y + s.h / 2 + jitter } : { x: l.widthMm / 2 + jitter, y: l.heightMm / 2 + jitter };

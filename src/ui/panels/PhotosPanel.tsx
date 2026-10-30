@@ -1,5 +1,7 @@
-import { Camera, ImageOff, ImagePlus, Upload } from 'lucide-react';
+import { Camera, ImageOff, ImagePlus, Smartphone, Upload } from 'lucide-react';
+import { useMemo } from 'react';
 import { filledCount } from '../../film/doc';
+import { classifyCameraSupport, hasCoarsePointer } from '../../media/capture';
 import { getPhoto } from '../../media/photos';
 import { useStudio } from '../../state/studio';
 import { drawCoverSimple } from '../util';
@@ -22,6 +24,9 @@ function SlotThumb({ photoId }: { photoId: string | null }) {
 export function PhotosPanel() {
   const { doc, selection, setSelection, apply } = useStudio();
   const intake = useIntake();
+  // the phone's own camera app is the natural button on touch devices, and the only working one when the live camera is blocked
+  const liveBlocked = useMemo(() => classifyCameraSupport() !== null, []);
+  const showPhoneCamera = useMemo(() => liveBlocked || hasCoarsePointer(), [liveBlocked]);
   return (
     <div>
       <Section title="Add photos">
@@ -33,6 +38,14 @@ export function PhotosPanel() {
             <Upload size={22} aria-hidden /> Upload
           </button>
         </div>
+        {showPhoneCamera && (
+          <button className="btn mt-2 w-full" onClick={() => intake.nativeCamera(null)}>
+            <Smartphone size={18} aria-hidden /> Phone camera
+          </button>
+        )}
+        <p className="mt-2 text-xs text-muted">
+          {liveBlocked ? "The live camera can't open on this page. Use your phone's camera instead." : "We'll ask to use your camera."} Photos never leave your device.
+        </p>
       </Section>
       <Section title="Slots" aside={<span className="num text-xs text-muted">{filledCount(doc)}/{doc.slots.length}</span>}>
         <div className="grid grid-cols-4 gap-2">

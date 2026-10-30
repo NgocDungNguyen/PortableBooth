@@ -37,6 +37,7 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
   const nativeInput = useRef<HTMLInputElement>(null);
   const target = useRef<number | null>(null);
   const nativeTarget = useRef<number | null>(null);
+  const cameraSlot = useRef<number | null>(null);
 
   const addFiles = useCallback(
     async (files: File[], slot: number | null): Promise<number[]> => {
@@ -65,9 +66,8 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
 
   const pick = useCallback((slot: number | null = null) => {
     target.current = slot;
-    if (input.current) {
-      input.current.click();
-    }
+    setChain(false);
+    input.current?.click();
   }, []);
 
   const nativeCamera = useCallback((slot: number | null = null) => {
@@ -78,6 +78,7 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
   const camera = useCallback(
     (slot: number | null = null) => {
       setFallback(null);
+      cameraSlot.current = slot;
       // never open a camera view that cannot work: explain and offer the phone camera right away
       const blocked = classifyCameraSupport();
       if (blocked) return setFallback({ reason: blocked, slot });
@@ -126,14 +127,10 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
     };
   }, [addFiles]);
 
-  const cameraSlot = queue && queue.length === 1 && doc.slots.length > 1 ? queue[0] : null;
-  const onDenied = useCallback(
-    (reason: CameraReason) => {
-      setQueue(null);
-      setFallback({ reason, slot: cameraSlot });
-    },
-    [cameraSlot],
-  );
+  const onDenied = useCallback((reason: CameraReason) => {
+    setQueue(null);
+    setFallback({ reason, slot: cameraSlot.current });
+  }, []);
   const onClose = useCallback(() => setQueue(null), []);
 
   const remaining = emptySlots(doc).length;

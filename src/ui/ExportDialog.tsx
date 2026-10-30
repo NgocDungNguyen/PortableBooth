@@ -12,7 +12,8 @@ export function ExportDialog() {
   const ref = useRef<HTMLDialogElement>(null);
   const [kind, setKind] = useState<ExportKind>('share');
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
-  const l = computeLayout(doc.format, doc.frames, doc.corners);
+  const l = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
+  const wide = doc.orientation === 'landscape';
   const ppm = kind === 'print' ? PPM_300DPI : 1800 / Math.max(l.widthMm, l.heightMm);
 
   useEffect(() => {
@@ -57,9 +58,11 @@ export function ExportDialog() {
             <h2 id="export-title" className="text-xl font-semibold">Export</h2>
             <button className="btn btn-icon btn-ghost" onClick={() => setExportOpen(false)} aria-label="Close"><X size={20} aria-hidden /></button>
           </div>
-          <Seg label="Size" value={kind} onChange={setKind} options={[{ id: 'share', label: 'Share', icon: <Smartphone size={16} aria-hidden /> }, { id: 'print', label: 'Print', icon: <Printer size={16} aria-hidden /> }]} />
+          <Seg label="Size" value={kind} onChange={setKind} options={wide
+            ? [{ id: 'share', label: 'Share (JPEG)' }, { id: 'print', label: 'PNG (lossless)' }]
+            : [{ id: 'share', label: 'Share', icon: <Smartphone size={16} aria-hidden /> }, { id: 'print', label: 'Print', icon: <Printer size={16} aria-hidden /> }]} />
           <p className="num text-sm text-muted" aria-live="polite">
-            {Math.round(l.widthMm * ppm)} × {Math.round(l.heightMm * ppm)} px{kind === 'print' ? ' · 300 DPI · PNG' : ' · JPEG'}
+            {Math.round(l.widthMm * ppm)} × {Math.round(l.heightMm * ppm)} px{kind === 'print' ? (wide ? ' · PNG' : ' · 300 DPI · PNG') : ' · JPEG'}
           </p>
           <button className="btn btn-primary btn-lg" onClick={() => run('save')} disabled={!!busy}>
             {busy === 'save' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Download size={20} aria-hidden />} Save

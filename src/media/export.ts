@@ -23,18 +23,19 @@ export async function exportFilm(doc: FilmDoc, kind: ExportKind): Promise<Export
   const canvas = document.createElement('canvas');
   try {
     const stamp = doc.date.replaceAll('-', '');
+    const wide = doc.orientation === 'landscape' ? '-wide' : '';
     if (kind === 'print') {
       const r = renderFilm(canvas, doc, { ppm: PPM_300DPI });
       const buf = new Uint8Array(await (await toBlob(canvas, 'image/png')).arrayBuffer());
       const png = setPngDpi(buf, 300);
-      return { blob: new Blob([png.slice().buffer], { type: 'image/png' }), filename: `portablebooth-${doc.format}-300dpi-${stamp}.png`, width: r.width, height: r.height, mime: 'image/png' };
+      return { blob: new Blob([png.slice().buffer], { type: 'image/png' }), filename: `portablebooth-${doc.format}${wide}${wide ? '' : '-300dpi'}-${stamp}.png`, width: r.width, height: r.height, mime: 'image/png' };
     }
     const probe = renderFilm(canvas, doc, { ppm: 1 });
     const ppm = SHARE_LONG_EDGE_PX / Math.max(probe.width, probe.height);
     const r = renderFilm(canvas, doc, { ppm, matte: '#FFFFFF' });
     const buf = new Uint8Array(await (await toBlob(canvas, 'image/jpeg', 0.92)).arrayBuffer());
     const jpg = setJpegDpi(buf, Math.round(r.ppm * 25.4));
-    return { blob: new Blob([jpg.slice().buffer], { type: 'image/jpeg' }), filename: `portablebooth-${doc.format}-${stamp}.jpg`, width: r.width, height: r.height, mime: 'image/jpeg' };
+    return { blob: new Blob([jpg.slice().buffer], { type: 'image/jpeg' }), filename: `portablebooth-${doc.format}${wide}-${stamp}.jpg`, width: r.width, height: r.height, mime: 'image/jpeg' };
   } finally {
     canvas.width = 0; // free the big bitmap straight away
   }

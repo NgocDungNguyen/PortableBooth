@@ -52,9 +52,7 @@ export function CameraFallback({ reason, onNative, onUpload, onRetry, onClose }:
     const d = ref.current;
     if (d && !d.open) d.showModal();
     primary.current?.focus();
-    return () => {
-      if (d?.open) d.close();
-    };
+    // no cleanup close: unmounting removes the dialog, and closing here would fire onClose under StrictMode
   }, []);
 
   return (
