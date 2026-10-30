@@ -20,13 +20,15 @@ npm run dev          # http://localhost:5173
 npm test             # unit tests (layout, doc, history, PNG DPI, shader params)
 npm run build        # typecheck + production build into dist/
 npm run build:preview  # single-file build into dist-preview/ (for quick sharing)
+npm run packs        # regenerate the lazy icon/emoji packs from the Iconify JSON (devDependencies)
 npm run e2e          # Playwright smoke test (needs `npm run build && npm run preview`)
 ```
 
 ## How it works
 - `src/film` – the film as plain data in **millimetres** (`FilmDoc`), pure layout maths, filters, undo/redo.
-- `src/render` – one renderer for preview *and* export: Canvas 2D composition + a WebGL film pass
-  (split-toning, grain, halation, light leaks, per-photo vignette), with a software fallback.
+- `src/render` – one renderer for preview *and* export: Canvas 2D composition (frames, overlays, elements) + a WebGL film pass
+  (split-toning, duotone, halftone, glitch, grain, halation, light leaks, per-photo vignette), with a software fallback.
+- `src/assets` – the lazy-loaded sticker library (`packs/*.json`, built by `scripts/build-packs.mjs`) and original shapes.
 - `src/media` – import, camera capture, export (PNG with `pHYs` = 300 DPI, JPEG for sharing).
 - `src/ui` – homepage and the Film → Photos → Edit → Export studio.
 - `docs/superpowers` – design spec and implementation plan.
