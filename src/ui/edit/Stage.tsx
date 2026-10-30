@@ -7,6 +7,7 @@ import { itemBox } from '../../render/compose';
 import { useStudio } from '../../state/studio';
 import { FilmCanvas } from '../FilmCanvas';
 import { useIntake } from '../intake';
+import { useZoom } from './Zoom';
 
 type Drag =
   | { kind: 'item'; id: string; dx: number; dy: number }
@@ -33,6 +34,8 @@ const stop = (e: React.PointerEvent) => e.stopPropagation();
 export function Stage() {
   const { doc, apply, selection, setSelection, setTool } = useStudio();
   const intake = useIntake();
+  const { zoom, detail, pinching } = useZoom();
+  const inv = 1 / zoom; // handles and buttons keep their on-screen size when the preview is zoomed
   const layout = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
   const drag = useRef<Drag>(null);
   const scale = useRef(1);
@@ -41,25 +44,44 @@ export function Stage() {
 
   const toMm = (clientX: number, clientY: number) => {
     const r = root.current!.getBoundingClientRect();
-    return { x: (clientX - r.left) / scale.current, y: (clientY - r.top) / scale.current };
+    // the bounding box includes the preview zoom
+    const k = scale.current * zoom;
+    return { x: (clientX - r.left) / k, y: (clientY - r.top) / k };
+  };
+
+  /** a touch selects only once it is clearly not the first finger of a pinch (moved, or lifted alone) */
+  const pending = useRef<(() => void) | null>(null);
+  const select = (e: React.PointerEvent, fn: () => void) => {
+    if (e.pointerType === 'touch') pending.current = fn;
+    else fn();
+  };
+  const flush = () => {
+    const fn = pending.current;
+    pending.current = null;
+    if (fn && !pinching.current) fn();
   };
 
   const down = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (pinching.current) {
+      pending.current = null;
+      drag.current = null;
+      return;
+    }
     const p = toMm(e.clientX, e.clientY);
     const it = hitItem(doc, p.x, p.y);
     setMenu(null);
     e.currentTarget.setPointerCapture(e.pointerId);
     if (it) {
-      setSelection({ type: 'item', id: it.id });
+      select(e, () => setSelection({ type: 'item', id: it.id }));
       drag.current = it.locked ? null : { kind: 'item', id: it.id, dx: it.x - p.x, dy: it.y - p.y };
       return;
     }
     const si = layout.slots.findIndex((s) => p.x >= s.x && p.x <= s.x + s.w && p.y >= s.y && p.y <= s.y + s.h);
     if (si >= 0) {
-      setSelection({ type: 'slot', index: si });
+      select(e, () => setSelection({ type: 'slot', index: si }));
       drag.current = doc.slots[si].photoId ? { kind: 'pan', index: si, lastX: p.x, lastY: p.y } : null;
     } else {
-      setSelection(null);
+      select(e, () => setSelection(null));
       drag.current = null;
     }
   };
@@ -67,6 +89,12 @@ export function Stage() {
   const move = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!d) return;
+    if (pinching.current) {
+      drag.current = null;
+      pending.current = null;
+      return;
+    }
+    flush();
     const p = toMm(e.clientX, e.clientY);
     if (d.kind === 'item') {
       apply((d0) => ({ ...d0, items: d0.items.map((i) => (i.id === d.id ? { ...i, x: p.x + d.dx, y: p.y + d.dy } : i)) }), `move-${d.id}`);
@@ -90,6 +118,7 @@ export function Stage() {
   };
 
   const up = () => {
+    flush();
     drag.current = null;
   };
 
@@ -152,13 +181,14 @@ export function Stage() {
   };
 
   return (
-    <FilmCanvas doc={doc} showEmpty label="Your film">
+    <FilmCanvas doc={doc} showEmpty label="Your film" detail={detail}>
       {(pxPerMm) => {
         scale.current = pxPerMm;
         const box = sel ? itemBox(sel) : null;
         return (
           <div
             ref={root}
+            data-film-editor
             className="absolute inset-0 touch-none outline-offset-8"
             tabIndex={0}
             role="group"
@@ -177,7 +207,7 @@ export function Stage() {
                   {selected && <div className="absolute inset-0 rounded-[inherit] border-2 border-accent" style={{ boxShadow: '0 0 0 1px rgba(0,0,0,0.5)' }} />}
                   {!filled && (
                     <div className="absolute inset-0 grid place-items-center">
-                      <div className="pointer-events-auto relative" onPointerDown={stop}>
+                      <div className="pointer-events-auto relative" onPointerDown={stop} style={{ transform: `scale(${inv})` }}>
                         <button className="grid size-11 place-items-center rounded-full border border-line2 bg-bg/70 text-text backdrop-blur transition-transform hover:scale-105" aria-haspopup="menu" aria-expanded={menu === i} aria-label={`Add photo ${i + 1}`} onClick={() => setMenu(menu === i ? null : i)}>
                           <Plus size={20} aria-hidden />
                         </button>
@@ -205,20 +235,20 @@ export function Stage() {
                       key={`${cx}${cy}`}
                       role="presentation"
                       onPointerDown={startHandle('size')}
-                      className="pointer-events-auto absolute grid size-11 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize place-items-center touch-none"
-                      style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
+                      className="pointer-events-auto absolute grid size-11 cursor-nwse-resize place-items-center touch-none"
+                      style={{ left: `${cx * 100}%`, top: `${cy * 100}%`, transform: `translate(-50%,-50%) scale(${inv})` }}
                     >
                       <span className="size-3.5 rounded-[4px] border-2 border-accent bg-bg shadow md:size-3" />
                     </span>
                   ))}
                 {!sel.locked && (
                   <>
-                    <span className="absolute left-1/2 -top-6 h-5 w-px bg-accent" aria-hidden />
+                    <span className="absolute left-1/2 w-px bg-accent" style={{ top: -24 * inv, height: 20 * inv }} aria-hidden />
                     <span
                       role="presentation"
                       onPointerDown={startHandle('rot')}
-                      className="pointer-events-auto absolute left-1/2 grid size-11 -translate-x-1/2 cursor-grab place-items-center touch-none"
-                      style={{ top: -52 }}
+                      className="pointer-events-auto absolute left-1/2 grid size-11 cursor-grab place-items-center touch-none"
+                      style={{ top: -52 * inv, transform: `translateX(-50%) scale(${inv})`, transformOrigin: '50% 0' }}
                     >
                       <span className="size-3.5 rounded-full border-2 border-accent bg-bg shadow" />
                     </span>

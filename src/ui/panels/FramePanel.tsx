@@ -34,11 +34,11 @@ export function FramePanel() {
         </div>
       </Section>
       <Section title="Colour">
-        <Swatches label="Film colour" colors={FRAME_COLORS} value={doc.frameColor} onChange={(c) => c && apply((d) => ({ ...d, frameColor: c }))} />
+        <Swatches label="Film colour" colors={FRAME_COLORS} value={doc.frameColor} onChange={(c, k) => c && apply((d) => ({ ...d, frameColor: c }), k)} />
       </Section>
       {usesC2 && (
         <Section title="Accent colour">
-          <Swatches label="Accent colour" colors={FRAME_COLORS} value={doc.frameColor2} onChange={(c) => c && apply((d) => ({ ...d, frameColor2: c }))} />
+          <Swatches label="Accent colour" colors={FRAME_COLORS} value={doc.frameColor2} onChange={(c, k) => c && apply((d) => ({ ...d, frameColor2: c }), k)} />
         </Section>
       )}
       <Section title="Corners">

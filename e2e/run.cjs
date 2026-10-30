@@ -165,6 +165,23 @@ const panel = (page) => page.locator('#tool-body');
   await panel(page).getByRole('radio', { name: /Film colour #FFD66B/ }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${SHOTS}/09-frame.png` });
+  // any colour: the picker beyond the presets, one undo step per pick
+  await panel(page).getByRole('radio', { name: 'Film colour: pick any colour' }).click();
+  await panel(page).getByRole('textbox', { name: 'Hex colour' }).fill('#12AB34');
+  await page.waitForTimeout(300);
+  ok((await panel(page).getByRole('radio', { name: 'Film colour #12AB34' }).getAttribute('aria-checked')) === 'true', 'colour picker: any custom colour can be applied');
+  await page.getByRole('button', { name: 'Undo' }).click();
+  ok((await panel(page).getByRole('radio', { name: /Film colour #FFD66B/ }).getAttribute('aria-checked')) === 'true', 'colour picker: one undo restores the previous colour');
+  await page.getByRole('button', { name: 'Redo' }).click();
+  await panel(page).getByRole('button', { name: 'Done choosing colour' }).click();
+  // the preview zooms on its own; the page does not
+  const fz0 = await page.locator('canvas[aria-label="Your film"]').boundingBox();
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await page.waitForTimeout(300);
+  const fz1 = await page.locator('canvas[aria-label="Your film"]').boundingBox();
+  ok(fz1.width > fz0.width * 1.3 && (await page.locator('header').boundingBox()).width === 1360, 'zoom: the film preview zooms without zooming the page');
+  await page.getByRole('button', { name: /fit to screen/ }).click();
+  await page.waitForTimeout(300);
 
   // ---- add: icon, emoji, shape, widget
   await page.getByRole('tab', { name: 'Add' }).click();

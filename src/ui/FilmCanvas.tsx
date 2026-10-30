@@ -13,10 +13,12 @@ interface Props {
   label: string;
   className?: string;
   children?: (pxPerMm: number) => ReactNode;
+  /** extra render resolution while the preview is zoomed in (1 = normal) */
+  detail?: number;
 }
 
 /** Live film preview. Same renderer as the export, just at screen resolution. */
-export function FilmCanvas({ doc, width, showEmpty, label, className = '', children }: Props) {
+export function FilmCanvas({ doc, width, showEmpty, label, className = '', children, detail = 1 }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -42,10 +44,13 @@ export function FilmCanvas({ doc, width, showEmpty, label, className = '', child
     const raf = requestAnimationFrame(() => {
       if (!canvas.current) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-      renderFilm(canvas.current, doc, { ppm: pxPerMm * dpr, showEmpty });
+      // zoomed in: render sharper, capped so the long edge stays within ~4096 px
+      const longMm = Math.max(layout.widthMm, layout.heightMm);
+      const ppm = Math.min(pxPerMm * dpr * Math.max(1, detail), Math.max(pxPerMm * dpr, 4096 / longMm));
+      renderFilm(canvas.current, doc, { ppm, showEmpty });
     });
     return () => cancelAnimationFrame(raf);
-  }, [doc, ready, pxPerMm, showEmpty, photosVersion]);
+  }, [doc, ready, pxPerMm, showEmpty, photosVersion, detail]);
 
   return (
     <div ref={wrap} className={`${width ? '' : 'h-full w-full'} flex items-center justify-center ${className}`}>

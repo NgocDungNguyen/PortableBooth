@@ -71,11 +71,8 @@ function Router() {
   // Without the intro (deep link to #studio or #about) the background track is queued straight away.
   useEffect(() => {
     if (!intro) audio.playBackground();
-    const once = () => {
-      audio.unlock();
-      window.removeEventListener('pointerdown', once, true);
-      window.removeEventListener('keydown', once, true);
-    };
+    // kept for the whole visit: unlock() is a no-op once sound runs, and a refused start waits for the next gesture
+    const once = () => audio.unlock();
     window.addEventListener('pointerdown', once, true);
     window.addEventListener('keydown', once, true);
     return () => {

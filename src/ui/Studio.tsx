@@ -8,6 +8,7 @@ import { SettingsButton } from './Settings';
 import { ExportDialog } from './ExportDialog';
 import { IntakeProvider } from './intake';
 import { Stage } from './edit/Stage';
+import { ZoomViewport } from './edit/Zoom';
 import { AddPanel } from './panels/AddPanel';
 import { FilmPanel } from './panels/FilmPanel';
 import { FramePanel } from './panels/FramePanel';
@@ -73,8 +74,10 @@ function StudioInner() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="stage-bg relative min-h-0 flex-1 p-4 md:p-8">
-          <Stage />
+        <div className="stage-bg relative min-h-0 flex-1">
+          <ZoomViewport>
+            <Stage />
+          </ZoomViewport>
         </div>
         <aside className={`flex shrink-0 flex-col border-t border-line bg-surface transition-[height] duration-200 md:h-auto md:w-[26rem] md:border-l md:border-t-0 ${dockOpen ? (showInspector ? 'h-[58dvh]' : 'h-[46dvh]') : 'h-auto'}`} aria-label="Tools">
           <div className="flex shrink-0 items-center border-b border-line px-1 py-1.5">

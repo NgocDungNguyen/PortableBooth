@@ -51,12 +51,12 @@ export function ItemInspector({ id }: { id: string }) {
       {it.kind === 'widget' && wdef && <WidgetControls it={it} patch={patch} labels={wdef.labels} usesBg={wdef.usesBg} />}
       {tintable && it.kind === 'sticker' && (
         <Section title="Colour">
-          <Swatches label="Colour" colors={TINT_COLORS} value={(it as StickerItem).tint} onChange={(c) => patch({ tint: c } as Partial<StickerItem>)} />
+          <Swatches label="Colour" colors={TINT_COLORS} value={(it as StickerItem).tint} onChange={(c, k) => patch({ tint: c } as Partial<StickerItem>, k)} />
         </Section>
       )}
       {it.kind === 'sticker' && !tintable && (
         <Section title="Tint">
-          <Swatches label="Tint" colors={TINT_COLORS} value={it.tint} nullable onChange={(c) => patch({ tint: c } as Partial<StickerItem>)} />
+          <Swatches label="Tint" colors={TINT_COLORS} value={it.tint} nullable onChange={(c, k) => patch({ tint: c } as Partial<StickerItem>, k)} />
         </Section>
       )}
       {it.kind === 'sticker' && (
@@ -75,7 +75,7 @@ export function ItemInspector({ id }: { id: string }) {
         </div>
         {it.outline && (
           <>
-            <Swatches label="Outline colour" colors={TINT_COLORS} value={it.outline.color} onChange={(c) => c && patch({ outline: { ...it.outline!, color: c } })} />
+            <Swatches label="Outline colour" colors={TINT_COLORS} value={it.outline.color} onChange={(c, k) => c && patch({ outline: { ...it.outline!, color: c } }, k)} />
             <Slider label="Width" value={it.outline.width} min={0.1} max={2.5} step={0.05} onChange={(v) => patch({ outline: { ...it.outline!, width: v } }, 'ow')} format={(v) => `${v.toFixed(1)} mm`} />
           </>
         )}
@@ -100,10 +100,10 @@ function TextControls({ it, patch }: { it: TextItem; patch: (p: Partial<Item>, k
         <Slider label="Spacing" value={it.tracking} min={-0.05} max={0.5} onChange={(v) => patch({ tracking: v }, 'trk')} format={(v) => v.toFixed(2)} />
       </Section>
       <Section title="Colour">
-        <Swatches label="Text colour" colors={TEXT_COLORS} value={it.color} onChange={(c) => c && patch({ color: c })} />
+        <Swatches label="Text colour" colors={TEXT_COLORS} value={it.color} onChange={(c, k) => c && patch({ color: c }, k)} />
       </Section>
       <Section title="Highlight">
-        <Swatches label="Highlight" colors={TEXT_COLORS} value={it.bg} nullable onChange={(c) => patch({ bg: c })} />
+        <Swatches label="Highlight" colors={TEXT_COLORS} value={it.bg} nullable onChange={(c, k) => patch({ bg: c }, k)} />
       </Section>
     </>
   );
@@ -116,8 +116,8 @@ function WidgetControls({ it, patch, labels, usesBg }: { it: WidgetItem; patch: 
         <label className="flex flex-col gap-1 text-xs text-muted">{labels.text}<input type="text" value={it.text} maxLength={40} onChange={(e) => patch({ text: e.target.value }, 'wt')} /></label>
         {labels.text2 !== undefined && <label className="flex flex-col gap-1 text-xs text-muted">{labels.text2}<input type="text" value={it.text2} maxLength={40} onChange={(e) => patch({ text2: e.target.value }, 'wt2')} /></label>}
       </Section>
-      <Section title="Ink"><Swatches label="Ink" colors={TEXT_COLORS} value={it.color} onChange={(c) => c && patch({ color: c })} /></Section>
-      {usesBg && <Section title="Paper"><Swatches label="Paper" colors={['#FFFFFF', '#F4EFE6', '#FFD66B', '#F4A6B7', '#9FD3FF', '#0F0F12']} value={it.bg} nullable onChange={(c) => patch({ bg: c ?? '' })} /></Section>}
+      <Section title="Ink"><Swatches label="Ink" colors={TEXT_COLORS} value={it.color} onChange={(c, k) => c && patch({ color: c }, k)} /></Section>
+      {usesBg && <Section title="Paper"><Swatches label="Paper" colors={['#FFFFFF', '#F4EFE6', '#FFD66B', '#F4A6B7', '#9FD3FF', '#0F0F12']} value={it.bg} nullable onChange={(c, k) => patch({ bg: c ?? '' }, k)} /></Section>}
     </>
   );
 }

@@ -599,3 +599,91 @@ input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
 .about-ghost { color: #fff; background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.3); }
 .about-ghost:hover { background: rgba(255, 255, 255, 0.2); }
 .about-h1:focus, .about-h1:focus-visible { outline: none; }
+
+/* preview zoom */
+@layer components {
+  .zoom-bar {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
+  }
+  .zoom-btn {
+    display: grid;
+    place-items: center;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9px;
+    color: var(--text);
+    transition: background-color 0.15s;
+  }
+  .zoom-btn:hover:not(:disabled) {
+    background: var(--surface-3);
+  }
+  .zoom-btn:disabled {
+    opacity: 0.4;
+  }
+  .zoom-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+/* colour picker */
+@layer components {
+  .swatch-custom {
+    background: conic-gradient(from 90deg, #ff4f5e, #ffb020, #c6f432, #36d6c3, #4f7bff, #b14fff, #ff4f5e);
+    color: #fff;
+  }
+  .swatch-custom svg {
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+  }
+  .color-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--surface-2);
+  }
+  .cp-sv {
+    position: relative;
+    height: 9.5rem;
+    border-radius: 10px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .cp-hue {
+    position: relative;
+    height: 1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    touch-action: none;
+    background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  }
+  .cp-thumb {
+    position: absolute;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.35);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .cp-sv:focus-visible,
+  .cp-hue:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+}

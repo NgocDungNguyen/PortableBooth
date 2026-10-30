@@ -1,4 +1,6 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { Plus } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { ColorPicker, isHex, recentColors } from './ColorPicker';
 import { computeLayout } from '../../film/layout';
 import { useStudio } from '../../state/studio';
 
@@ -41,22 +43,41 @@ export function Seg<T extends string>({ value, onChange, options, label }: { val
   );
 }
 
-export function Swatches({ colors, value, onChange, label, allowCustom = true, nullable }: { colors: string[]; value: string | null; onChange: (c: string | null) => void; label: string; allowCustom?: boolean; nullable?: boolean }) {
+export function Swatches({ colors, value, onChange, label, allowCustom = true, nullable }: { colors: string[]; value: string | null; onChange: (c: string | null, key?: string) => void; label: string; allowCustom?: boolean; nullable?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const lower = colors.map((c) => c.toLowerCase());
+  const custom = isHex(value) && !lower.includes(value.toLowerCase());
+  // colours picked earlier in this visit, offered next to the presets
+  const extra = allowCustom ? recentColors().filter((c) => !lower.includes(c.toLowerCase())).slice(0, 4) : [];
+  // the + swatch wears the custom colour only when no other swatch already shows it
+  const ownSwatch = custom && !extra.some((c) => c.toLowerCase() === value!.toLowerCase());
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap items-center gap-2">
-      {nullable && (
-        <button role="radio" aria-checked={value === null} aria-label={`${label}: none`} onClick={() => onChange(null)} className="swatch checker text-xs font-bold text-muted">
-          –
-        </button>
-      )}
-      {colors.map((c) => (
-        <button key={c} role="radio" aria-checked={value?.toLowerCase() === c.toLowerCase()} aria-label={`${label} ${c}`} onClick={() => onChange(c)} className="swatch" style={{ background: c }} />
-      ))}
-      {allowCustom && (
-        <label className="swatch relative overflow-hidden" title="Custom colour" style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }}>
-          <input type="color" aria-label={`${label} custom`} value={value && /^#[0-9a-f]{6}$/i.test(value) ? value : '#ffffff'} onChange={(e) => onChange(e.target.value.toUpperCase())} className="absolute inset-0 size-full cursor-pointer opacity-0" />
-        </label>
-      )}
+    <div className="flex flex-col gap-2.5">
+      <div role="radiogroup" aria-label={label} className="flex flex-wrap items-center gap-2">
+        {nullable && (
+          <button role="radio" aria-checked={value === null} aria-label={`${label}: none`} onClick={() => onChange(null)} className="swatch checker text-xs font-bold text-muted">
+            –
+          </button>
+        )}
+        {[...colors, ...extra].map((c) => (
+          <button key={c} role="radio" aria-checked={value?.toLowerCase() === c.toLowerCase()} aria-label={`${label} ${c}`} onClick={() => onChange(c)} className="swatch" style={{ background: c }} />
+        ))}
+        {allowCustom && (
+          <button
+            type="button"
+            role="radio"
+            aria-checked={ownSwatch}
+            aria-label={`${label}: pick any colour`}
+            title="Pick any colour"
+            onClick={() => setOpen((o) => !o)}
+            className="swatch swatch-custom"
+            style={ownSwatch ? { background: value! } : undefined}
+          >
+            {!ownSwatch && <Plus size={15} strokeWidth={2.6} aria-hidden />}
+          </button>
+        )}
+      </div>
+      {open && <ColorPicker value={value} label={label} onChange={(c) => onChange(c, `colour-${label}`)} onClose={() => setOpen(false)} />}
     </div>
   );
 }

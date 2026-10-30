@@ -54,7 +54,6 @@ const SRC: Record<string, string> = { 'golden-hour': goldenHour, 'night-drive': 
 /** the intro score: one scene every 7.5 s, then it holds on the last scene and fades out by 40 s */
 export const INTRO_SCENE_S = 7.5;
 const FADE = 1.2;
-const SEEK_FADE = 0.14;
 
 let state: AudioState = { enabled: true, volume: 0.5, track: TRACKS[0].id, unlocked: false, mode: 'off', playing: false };
 const subs = new Set<() => void>();
@@ -88,6 +87,13 @@ function getDecks(): [Deck, Deck] | null {
       el.addEventListener('playing', sync);
       el.addEventListener('pause', sync);
       el.addEventListener('ended', sync);
+      // the tutorial score has run out while the reel still shows: carry on with the background music
+      el.addEventListener('ended', () => {
+        if (state.mode === 'intro' && same(el, introScore)) {
+          set({ mode: 'background' });
+          start();
+        }
+      });
       return { el, gain: 0, raf: 0, timer: 0 };
     };
     decks = [make(), make()];
@@ -227,6 +233,17 @@ if (typeof document !== 'undefined') {
   });
 }
 
+/**
+ * Try to start sound right away. Browsers decide: many allow it (Chrome/Edge on sites you have used before, desktop
+ * Safari with autoplay allowed), others refuse sound until a tap. A refusal (NotAllowedError) resets `unlocked`
+ * so the first tap or key press starts it instead.
+ */
+function tryAutoplay() {
+  if (!can) return;
+  if (!state.unlocked) set({ unlocked: true });
+  start();
+}
+
 // --------------------------------------------------------------------------------------------- the API
 export const audio = {
   getState: (): AudioState => state,
@@ -241,41 +258,15 @@ export const audio = {
     if (state.mode === 'off') set({ mode: 'background' });
     start();
   },
-  /** the tutorial score, synced to the intro scenes (scene index 0..n-1); queued until unlock */
+  /** the tutorial score, synced to the intro scenes; tries to autoplay, else starts on the first gesture */
   playIntro: () => {
     introAnchor = { scene: 0, at: performance.now() };
     set({ mode: 'intro' });
-    // warm the file so the first tap starts it immediately
-    const ds = getDecks();
-    if (ds && !state.unlocked) {
-      const d = ds[live ^ 1];
-      if (!same(d.el, introScore)) d.el.src = introScore;
-    }
-    start();
+    tryAutoplay();
   },
-  /** jump the score to scene i (short fade); a no-op when the score is already there */
+  /** the user moved the reel: the score keeps playing uninterrupted (no restart, no seek) */
   introScene: (index: number) => {
-    const i = Math.max(0, Math.floor(index));
-    introAnchor = { scene: i, at: performance.now() };
-    if (state.mode !== 'intro' || !state.unlocked || !state.enabled) return;
-    const ds = decks;
-    if (!ds) return;
-    const d = ds[live];
-    const target = i * INTRO_SCENE_S;
-    if (!same(d.el, introScore) || d.el.paused) {
-      start();
-      return;
-    }
-    if (Math.abs(d.el.currentTime - target) < 0.35) return;
-    rampTo(d, 0, SEEK_FADE, () => {
-      try {
-        d.el.currentTime = target;
-      } catch {
-        /* ignore */
-      }
-      if (d.el.ended || d.el.paused) play(d);
-      rampTo(d, 1, SEEK_FADE * 1.5);
-    });
+    introAnchor = { scene: Math.max(0, Math.floor(index)), at: performance.now() };
   },
   /** leave the intro: crossfade into the background track */
   stopIntro: () => {
@@ -285,7 +276,7 @@ export const audio = {
   },
   playBackground: () => {
     set({ mode: 'background' });
-    start();
+    tryAutoplay();
   },
   setEnabled: (on: boolean) => {
     if (on === state.enabled) return;
