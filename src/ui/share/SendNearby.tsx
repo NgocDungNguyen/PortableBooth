@@ -1,4 +1,4 @@
-import { Loader2, Lock, ScanLine, Wifi } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, ScanLine, Wifi } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NETWORK_HINT, beamToHash, decodeBeam, startSender, type BeamPhase, type BeamSender } from '../../media/beam';
 import type { ExportResult } from '../../media/export';
@@ -6,7 +6,6 @@ import { appUrl } from '../../media/share';
 import { ProgressRing } from './ProgressRing';
 import { QrCode } from './QrCode';
 import { QrScanner } from './QrScanner';
-import { Sheet } from './Sheet';
 
 type Step = 'prep' | 'offer' | 'scan' | BeamPhase;
 
@@ -18,7 +17,10 @@ function failMessage(e: unknown): string {
   return `Couldn't reach the other device. ${NETWORK_HINT}`;
 }
 
-/** Sender flow: offer QR -> scan the reply QR -> direct WebRTC link on the local network -> chunked transfer with progress. */
+/**
+ * Sender flow: offer QR -> scan the reply QR -> direct WebRTC link on the local network -> chunked transfer with progress.
+ * Rendered as a view inside the export dialog (no nested modal), so Esc / Back return to the export options.
+ */
 export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose: () => void; getFile: () => Promise<ExportResult> }) {
   const [step, setStep] = useState<Step>('prep');
   const [code, setCode] = useState('');
@@ -27,6 +29,7 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
   const sender = useRef<BeamSender | null>(null);
   const run = useRef(0);
   const scanBtn = useRef<HTMLButtonElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
 
   const stop = () => {
     run.current++;
@@ -66,7 +69,8 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
 
   useEffect(() => {
     if (step === 'offer') scanBtn.current?.focus();
-  }, [step]);
+    else if (open) title.current?.focus();
+  }, [step, open]);
 
   const onReply = async (reply: string) => {
     const s = sender.current;
@@ -86,7 +90,11 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
   const busy = step === 'connecting' || step === 'transferring';
 
   return (
-    <Sheet open={open} onClose={onClose} title="Send to a nearby phone" titleId="beam-send-title" wide>
+    <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <div className="flex items-center gap-2">
+        <button className="btn btn-icon btn-ghost -ml-2" onClick={onClose} aria-label="Back to save and share"><ArrowLeft size={20} aria-hidden /></button>
+        <h2 id="beam-send-title" ref={title} tabIndex={-1} className="text-xl font-semibold outline-none">Send to a nearby phone</h2>
+      </div>
       <div aria-live="polite" className="flex flex-col gap-4">
         {step === 'prep' && (
           <p className="flex items-center justify-center gap-2 py-16 text-muted"><Loader2 className="animate-spin" size={20} aria-hidden /> Getting ready…</p>
@@ -136,6 +144,6 @@ export function SendNearby({ open, onClose, getFile }: { open: boolean; onClose:
           <p className="flex items-center gap-2"><Lock size={14} aria-hidden /> Goes straight to the other device. Nothing is uploaded.</p>
         </div>
       )}
-    </Sheet>
+    </div>
   );
 }

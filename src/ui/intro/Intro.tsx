@@ -1,30 +1,35 @@
 import { motion, useMotionValueEvent, useTransform, type MotionValue } from 'motion/react';
-import { ArrowLeft, ArrowRight, Camera } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { ensureSticker } from '../../assets/library';
+import { audio } from '../../audio';
 import { clamp01, easeOutCubic, useMotionOK, useProgress, useSpringProgress, useLerp } from '../motion';
 import { REEL_STICKERS, reelDocs } from './docs';
-import { SCENE_VIEWS } from './scenes';
+import { SCENE_VIEWS, START_AT } from './scenes';
 import { useReel } from './useReel';
 
-export const SCENE_MS = 2200;
+/** every scene lasts exactly this long; the intro music cuts on the same grid (0, 7.5, 15, 22.5, 30 s) */
+export const SCENE_MS = 7500;
 
 interface SceneMeta {
   words: string[];
   /** index of the word that gets the gradient */
   em: number;
+  /** the supporting line under the headline */
+  line: string;
   /** plain-language description for screen readers */
   desc: string;
 }
 const SCENES: SceneMeta[] = [
-  { words: ['Pick', 'your', 'film'], em: 2, desc: 'Choose a film strip, an instant card or a film roll. Tall for print, wide for sharing.' },
-  { words: ['Snap', 'or', 'upload'], em: 0, desc: 'Take photos with a countdown, or upload your own. They drop into the film.' },
-  { words: ['Make', 'it', 'yours'], em: 2, desc: 'Try looks, add stickers and a text label.' },
-  { words: ['Frames,', 'colours,', 'details'], em: 2, desc: 'Change the frame style and colours, and add details like a ticket.' },
-  { words: ['Save.', 'Print.', 'Share.'], em: 2, desc: 'Save a 300 DPI PNG, ready to print or share.' },
+  { words: ['Pick', 'your', 'film'], em: 2, line: 'Strip, instant or roll. Tall to print, wide to share.', desc: 'Start on the Film tab: choose a strip, an instant card or a film roll, tall for print or wide for sharing, then tap Next: add photos.' },
+  { words: ['Snap', 'or', 'upload'], em: 0, line: 'Shoot with a countdown, or add photos you love.', desc: 'Take photos with a 3, 2, 1 countdown, or upload your own. They drop into the film one by one.' },
+  { words: ['Make', 'it', 'yours'], em: 2, line: 'Try looks, then add stickers and text.', desc: 'Tap looks to restyle the whole film, drag stickers on, and add a text label you can resize.' },
+  { words: ['Frames,', 'colours,', 'details'], em: 2, line: 'Patterns, colours, date stamps and light leaks.', desc: 'Change the frame pattern and colour, place a date stamp, and fade in a light leak.' },
+  { words: ['Save.', 'Print.', 'Share.'], em: 2, line: '300 DPI prints, or send it anywhere.', desc: 'Export a 300 DPI PNG to print, or share it with nearby devices, messages, mail or a QR code.' },
 ];
 const COUNT = SCENES.length;
-const STILL_AT = [900, 2200, 2200, 2200, 2200];
+/** poses for reduced motion (static cards): late in each scene, when everything has landed */
+const STILL_AT = [7400, 7400, 7400, 7400, 7400];
 
 function Segment({ time, i }: { time: MotionValue<number>; i: number }) {
   const scaleX = useTransform(time, (v) => clamp01((v - i * SCENE_MS) / SCENE_MS));
@@ -36,7 +41,7 @@ function Segment({ time, i }: { time: MotionValue<number>; i: number }) {
 }
 
 function Word({ local, i, em, children }: { local: MotionValue<number>; i: number; em: boolean; children: string }) {
-  const p = useSpringProgress(local, 40 + i * 90, 300, 28);
+  const p = useSpringProgress(local, 60 + i * 110, 260, 28);
   const y = useTransform(p, (v) => `${(1 - v) * 108}%`);
   return (
     <span className="reel-word">
@@ -45,31 +50,35 @@ function Word({ local, i, em, children }: { local: MotionValue<number>; i: numbe
   );
 }
 
-function Title({ local, index, last }: { local: MotionValue<number>; index: number; last: boolean }) {
+function Caption({ local, index, last }: { local: MotionValue<number>; index: number; last: boolean }) {
   const m = SCENES[index];
-  const out = useProgress(local, SCENE_MS - 170, 170, easeOutCubic);
+  const out = useProgress(local, SCENE_MS - 260, 260, easeOutCubic);
   const opacity = useTransform(out, (v) => (last ? 1 : 1 - v));
   const num = useSpringProgress(local, 0, 300, 28);
   const numOp = useTransform(num, (v) => clamp01(v * 2));
+  const sub = useSpringProgress(local, 420, 220, 26);
+  const subOp = useTransform(sub, (v) => clamp01(v * 1.6));
+  const subY = useLerp(sub, 10, 0);
   return (
-    <motion.div style={{ opacity }} className="reel-title">
-      <motion.p style={{ opacity: numOp }} className="num mb-2 text-[0.8rem] tracking-[0.14em] text-muted lg:mb-5 lg:text-sm" aria-hidden>
-        {String(index + 1).padStart(2, '0')} <span className="opacity-50">/ {String(COUNT).padStart(2, '0')}</span>
+    <motion.div style={{ opacity }} className="reel-cap" aria-hidden>
+      <motion.p style={{ opacity: numOp }} className="reel-count num">
+        {index + 1}<span className="opacity-55">/{COUNT}</span>
       </motion.p>
-      <h2 aria-hidden className="reel-h flex flex-wrap gap-x-[0.28em] font-display font-bold lg:block">
+      <h2 className="reel-h font-display font-bold">
         {m.words.map((w, i) => (
-          <span key={w} className="lg:block"><Word local={local} i={i} em={i === m.em}>{w}</Word></span>
+          <span key={w} className="reel-h-w"><Word local={local} i={i} em={i === m.em}>{w}</Word></span>
         ))}
       </h2>
+      <motion.p className="reel-sub" style={{ opacity: subOp, y: subY }}>{m.line}</motion.p>
     </motion.div>
   );
 }
 
 function StartButton({ local, onClick }: { local: MotionValue<number>; onClick: () => void }) {
-  const [shown, setShown] = useState(() => local.get() >= 1450);
-  useMotionValueEvent(local, 'change', (v) => setShown(v >= 1450));
-  const p = useSpringProgress(local, 1450, 360, 22);
-  const scale = useLerp(p, 0.8, 1);
+  const [shown, setShown] = useState(() => local.get() >= START_AT);
+  useMotionValueEvent(local, 'change', (v) => setShown(v >= START_AT));
+  const p = useSpringProgress(local, START_AT, 300, 22);
+  const scale = useLerp(p, 0.85, 1);
   const opacity = useTransform(p, (v) => clamp01(v * 2.5));
   return (
     <motion.button type="button" onClick={onClick} className="btn btn-primary btn-lg reel-start" style={{ scale, opacity, visibility: shown ? 'visible' : 'hidden' }}>
@@ -78,21 +87,58 @@ function StartButton({ local, onClick }: { local: MotionValue<number>; onClick: 
   );
 }
 
+/** a copy of the audio state, refreshed on every change (works whether the store mutates or replaces it) */
+function useAudioState() {
+  const [s, setS] = useState(() => ({ ...audio.getState() }));
+  useEffect(() => {
+    setS({ ...audio.getState() });
+    return audio.subscribe(() => setS({ ...audio.getState() }));
+  }, []);
+  return s;
+}
+
+/** resolves after fonts are ready and the first frame has painted (at least ~400 ms after mount) */
+function usePainted(): boolean {
+  const [painted, setPainted] = useState(false);
+  useEffect(() => {
+    let live = true;
+    const t0 = performance.now();
+    const fonts = (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready ?? Promise.resolve();
+    const cap = new Promise((r) => setTimeout(r, 1500));
+    Promise.race([fonts, cap]).then(() => {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const wait = Math.max(0, 400 - (performance.now() - t0));
+          setTimeout(() => live && setPainted(true), wait);
+        }),
+      );
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return painted;
+}
+
 /**
- * "How it works": a short auto-running reel shown before the homepage. Five scenes, each one idea, drawn with the
- * real film renderer. One clock drives everything (see useReel), so pause and seek are exact.
+ * "How it works": an auto-running reel shown before the homepage. Five 7.5 s scenes, each with a few
+ * choreographed beats drawn with the real film renderer. One clock drives everything (see useReel), so pause and
+ * seek are exact, and the intro music (audio.playIntro) cuts on the same grid.
  */
 export function Intro({ onDone }: { onDone: () => void }) {
   const ok = useMotionOK();
-  const reel = useReel({ count: COUNT, sceneMs: SCENE_MS, auto: ok, stillAt: STILL_AT });
+  const painted = usePainted();
+  const reel = useReel({ count: COUNT, sceneMs: SCENE_MS, auto: ok, stillAt: STILL_AT, running: painted });
   const { scene, local, time } = reel;
+  const sound = useAudioState();
+  const [tapped, setTapped] = useState(false);
   const [stickersReady, setStickersReady] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
   const down = useRef<{ x: number; y: number; at: number } | null>(null);
   const closed = useRef(false);
-  const latest = useRef({ reel, onDone });
-  latest.current = { reel, onDone };
+  const latest = useRef({ reel, onDone, tapped, sound });
+  latest.current = { reel, onDone, tapped, sound };
 
   reelDocs(); // build the sample films once, before the first frame
   useEffect(() => {
@@ -103,9 +149,16 @@ export function Intro({ onDone }: { onDone: () => void }) {
     };
   }, []);
 
+  // the score starts with the clock and always stops when the reel goes away, whatever closed it
+  useEffect(() => {
+    if (painted) audio.playIntro();
+  }, [painted]);
+  useEffect(() => () => audio.stopIntro(), []);
+
   const finish = useCallback(() => {
     if (closed.current) return;
     closed.current = true;
+    audio.stopIntro();
     latest.current.onDone();
   }, []);
 
@@ -123,9 +176,32 @@ export function Intro({ onDone }: { onDone: () => void }) {
     };
   }, []);
 
+  /** user navigation: move the reel, then put the music on the same cut */
+  const goTo = useCallback((move: () => boolean | void) => {
+    const r = latest.current.reel;
+    const before = r.current();
+    move();
+    const after = r.current();
+    if (after !== before) audio.introScene(after);
+  }, []);
   const goNext = useCallback(() => {
-    if (!latest.current.reel.next()) finish();
-  }, [finish]);
+    let more = true;
+    goTo(() => (more = latest.current.reel.next()));
+    if (!more) finish();
+  }, [finish, goTo]);
+  const goPrev = useCallback(() => goTo(() => latest.current.reel.prev()), [goTo]);
+
+  /** the first touch turns the sound on: restart the current scene so picture and music start together */
+  const firstTouch = useCallback(() => {
+    const { tapped: t, sound: s, reel: r } = latest.current;
+    audio.unlock();
+    if (t) return false;
+    setTapped(true);
+    if (!s.enabled || s.unlocked) return false;
+    r.seek(r.current());
+    audio.introScene(r.current());
+    return true;
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -133,12 +209,15 @@ export function Intro({ onDone }: { onDone: () => void }) {
       if (e.key === 'Escape') {
         e.preventDefault();
         finish();
-      } else if (e.key === 'ArrowRight') {
+        return;
+      }
+      audio.unlock();
+      if (e.key === 'ArrowRight') {
         e.preventDefault();
         goNext();
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        latest.current.reel.prev();
+        goPrev();
       } else if (e.key === ' ' && !t?.closest('button, a')) {
         e.preventDefault();
         goNext();
@@ -162,11 +241,12 @@ export function Intro({ onDone }: { onDone: () => void }) {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [finish, goNext]);
+  }, [finish, goNext, goPrev]);
 
   // tap = next (right two thirds) / back (left third); press and hold = pause
   const interactive = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.('button, a');
   const onPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
+    audio.unlock();
     if (interactive(e.target)) return;
     down.current = { x: e.clientX, y: e.clientY, at: performance.now() };
     reel.hold(true);
@@ -179,20 +259,27 @@ export function Intro({ onDone }: { onDone: () => void }) {
     if (!d) return;
     const tap = performance.now() - d.at < 320 && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 14;
     if (!tap) return;
+    if (firstTouch()) return;
     const r = e.currentTarget.getBoundingClientRect();
-    if (e.clientX - r.left < r.width / 3) reel.prev();
+    if (e.clientX - r.left < r.width / 3) goPrev();
     else goNext();
   };
   const onPointerCancel = () => {
     down.current = null;
     reel.hold(false);
   };
+  const toggleSound = () => {
+    audio.unlock();
+    setTapped(true);
+    audio.setEnabled(!sound.enabled);
+  };
 
   const View = SCENE_VIEWS[scene];
   const last = scene === COUNT - 1;
-  const exit = useProgress(local, SCENE_MS - 170, 170, easeOutCubic);
+  const exit = useProgress(local, SCENE_MS - 260, 260, easeOutCubic);
   const stageOpacity = useTransform(exit, (v) => (last ? 1 : 1 - v));
   const m = SCENES[scene];
+  const soundHint = ok && !tapped && sound.enabled && !sound.unlocked;
 
   return (
     <motion.div
@@ -201,7 +288,7 @@ export function Intro({ onDone }: { onDone: () => void }) {
       aria-modal="true"
       aria-label="How PortableBooth works"
       tabIndex={-1}
-      className="reel fixed inset-0 z-[100] flex flex-col overflow-hidden bg-bg text-text outline-none"
+      className="reel fixed inset-0 z-[100] overflow-hidden bg-bg text-text outline-none"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.2 } }}
       exit={{ opacity: 0, transition: { duration: 0.16 } }}
@@ -216,24 +303,27 @@ export function Intro({ onDone }: { onDone: () => void }) {
         <div className="blob drift-a reel-blob reel-blob-3" />
       </div>
 
-      <header className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
+      <header className="reel-head">
         <div aria-hidden className="flex gap-1.5">
           {SCENES.map((_, i) => <Segment key={i} time={time} i={i} />)}
         </div>
-        <div className="mt-2.5 flex items-center justify-between">
-          <span className="flex items-center gap-2 font-display text-[0.95rem] font-semibold" aria-hidden>
-            <span className="grid size-7 place-items-center rounded-lg bg-accent text-accentink"><Camera size={15} /></span>
-            PortableBooth
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2 font-display text-[0.95rem] font-semibold" aria-hidden>
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent text-accentink"><Camera size={15} /></span>
+            <span className="truncate">PortableBooth</span>
           </span>
-          <button ref={skip} type="button" onClick={finish} className="btn reel-skip">Skip</button>
+          <span className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={toggleSound} className="btn reel-sound" aria-label="Sound" aria-pressed={sound.enabled} title={sound.enabled ? 'Mute' : 'Sound on'}>
+              {sound.enabled ? <Volume2 size={18} aria-hidden /> : <VolumeX size={18} aria-hidden />}
+            </button>
+            <button ref={skip} type="button" onClick={finish} className="btn reel-skip">Skip</button>
+          </span>
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pt-2 lg:flex-row lg:items-center lg:gap-14">
-        <div className="lg:w-[44%]">
-          <Title key={scene} local={local} index={scene} last={last} />
-        </div>
-        <div className="reel-fit min-h-0 flex-1 lg:h-full lg:py-4">
+      <div className="reel-body">
+        <Caption key={scene} local={local} index={scene} last={last} />
+        <div className="reel-fit">
           <div className="reel-frame" data-s={scene}>
             {SCENES.map((_, i) => <div key={i} aria-hidden className={`reel-layer reel-layer-${i}`} style={{ opacity: i === scene ? 1 : 0 }} />)}
             <motion.div key={scene} aria-hidden className="reel-stage absolute inset-0" style={{ opacity: stageOpacity }}>
@@ -241,25 +331,30 @@ export function Intro({ onDone }: { onDone: () => void }) {
             </motion.div>
           </div>
         </div>
+        <div className="reel-foot">
+          {!ok && (
+            <button type="button" className="btn btn-lg" onClick={goPrev} disabled={scene === 0}><ArrowLeft size={18} aria-hidden /> Back</button>
+          )}
+          {last && (ok ? <StartButton local={local} onClick={finish} /> : <button type="button" onClick={finish} className="btn btn-primary btn-lg reel-start">Start <ArrowRight size={19} aria-hidden /></button>)}
+          {!last && !ok && (
+            <button type="button" className="btn btn-primary btn-lg" onClick={goNext}>Next <ArrowRight size={18} aria-hidden /></button>
+          )}
+          {!last && ok && (
+            soundHint ? (
+              <p className="reel-hint reel-hint-sound" aria-hidden>
+                <Volume2 size={15} aria-hidden /> <span className="reel-hint-touch">Tap for sound</span><span className="reel-hint-keys">Click for sound</span>
+              </p>
+            ) : (
+              <p className="reel-hint" aria-hidden>
+                <span className="reel-hint-touch">Tap to continue · hold to pause</span>
+                <span className="reel-hint-keys num">← → move · Esc skip</span>
+              </p>
+            )
+          )}
+        </div>
       </div>
 
-      <footer className="relative z-10 flex min-h-[calc(5.25rem+env(safe-area-inset-bottom))] items-center justify-center gap-3 px-4 pb-[env(safe-area-inset-bottom)]">
-        {!ok && (
-          <button type="button" className="btn btn-lg" onClick={() => reel.prev()} disabled={scene === 0}><ArrowLeft size={18} aria-hidden /> Back</button>
-        )}
-        {last ? (
-          <StartButton local={local} onClick={finish} />
-        ) : ok ? (
-          <p className="reel-hint text-[0.8rem] text-muted" aria-hidden>
-            <span className="reel-hint-touch">Tap to continue · hold to pause</span>
-            <span className="reel-hint-keys num">← → move · Esc skip</span>
-          </p>
-        ) : (
-          <button type="button" className="btn btn-primary btn-lg" onClick={goNext}>Next <ArrowRight size={18} aria-hidden /></button>
-        )}
-      </footer>
-
-      <p className="sr-only-text" aria-live="polite" aria-atomic="true">{`Step ${scene + 1} of ${COUNT}: ${m.words.join(' ')} ${m.desc}`}</p>
+      <p className="sr-only-text" aria-live="polite" aria-atomic="true">{`Step ${scene + 1} of ${COUNT}: ${m.words.join(' ')} ${m.line} ${m.desc}`}</p>
       <ol className="sr-only-text">
         {SCENES.map((s) => <li key={s.words.join('-')}>{s.words.join(' ')}. {s.desc}</li>)}
       </ol>

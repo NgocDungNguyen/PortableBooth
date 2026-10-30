@@ -285,6 +285,18 @@ interface Develop {
   warmth?: number;
 }
 
+const NOISE_TILE = 512;
+let tile: Float32Array | null = null;
+/** shared tile of triangular-distributed noise, -1..1 */
+function noiseTile(): Float32Array {
+  if (!tile) {
+    const r = prng(0x51ed270b);
+    tile = new Float32Array(NOISE_TILE * NOISE_TILE);
+    for (let i = 0; i < tile.length; i++) tile[i] = r() + r() - 1;
+  }
+  return tile;
+}
+
 function develop(x: Ctx, w: number, h: number, o: Develop, seed: number) {
   if (o.bloom > 0) {
     const f = 5;
@@ -319,13 +331,10 @@ function develop(x: Ctx, w: number, h: number, o: Develop, seed: number) {
   for (let i = 0; i < w; i++) vx[i] = ((i / w - 0.5) * 2) ** 2;
   const img = x.getImageData(0, 0, w, h);
   const d = img.data;
-  let s = (seed ^ 0x5bd1e995) | 1;
-  const rnd = () => {
-    s ^= s << 13;
-    s ^= s >>> 17;
-    s ^= s << 5;
-    return (s >>> 0) / 4294967296;
-  };
+  const N = noiseTile();
+  const TM = NOISE_TILE - 1;
+  const ox = (seed * 131) & TM;
+  const oy = (seed * 71) & TM;
   const wr = 1 + (o.warmth ?? 0) * 0.06;
   const wb = 1 - (o.warmth ?? 0) * 0.08;
   const aspect = h / w;
@@ -347,11 +356,13 @@ function develop(x: Ctx, w: number, h: number, o: Develop, seed: number) {
       b = lut[b < 0 ? 0 : b > 255 ? 255 : b | 0] * vig;
       const l = (r * 0.3 + g * 0.59 + b * 0.11) / 255;
       const amp = o.grain * (0.45 + 2.2 * l * (1 - l));
-      const n = (rnd() + rnd() - 1) * amp;
-      const cn = o.grain * 0.55 * (1 - l) * (1 - l);
-      d[i] = r + n + (rnd() - 0.5) * cn;
-      d[i + 1] = g + n + (rnd() - 0.5) * cn;
-      d[i + 2] = b + n * 1.08 + (rnd() - 0.5) * cn;
+      const ty = ((y + oy) & TM) * NOISE_TILE;
+      const tx = (xx + ox) & TM;
+      const n = N[ty + tx] * amp;
+      const cn = o.grain * 0.4 * (1 - l) * (1 - l);
+      d[i] = r + n + N[ty + ((tx + 211) & TM)] * cn;
+      d[i + 1] = g + n + N[ty + ((tx + 89) & TM)] * cn;
+      d[i + 2] = b + n * 1.08 + N[ty + ((tx + 353) & TM)] * cn;
     }
   }
   x.putImageData(img, 0, 0);
@@ -421,7 +432,7 @@ function person(x: Ctx, cx: number, sy: number, s: number, f: Figure) {
   x.lineJoin = 'round';
   x.strokeStyle = x.fillStyle;
   if (f.arm === 'phone') {
-    x.lineWidth = 0.3;
+    x.lineWidth = 0.38;
     x.beginPath();
     x.moveTo(0.75, 0.1);
     x.lineTo(1.25, -1.1);
@@ -519,10 +530,10 @@ function goldenHour(x: Ctx, r: Rnd, w: number, h: number) {
   pxx.fillStyle = '#1f130c';
   person(pxx, w * 0.27, h * 0.66, 78, { hair: 'long', arm: 'none', turn: 0.2, tilt: 0.03 });
   person(pxx, w * 0.47, h * 0.6, 70, { hair: 'bun', arm: 'phone', turn: -0.1, tilt: -0.02 });
-  person(pxx, w * 0.79, h * 0.68, 74, { hair: 'short', arm: 'wave', turn: 0.3, tilt: -0.04 });
+  person(pxx, w * 0.77, h * 0.68, 74, { hair: 'short', arm: 'none', turn: 0.3, tilt: -0.06 });
   const soft = blur(p, 1.2);
   comp(x, soft, 'source-over', 1);
-  lightWrap(x, bg, soft, 5, 0.75);
+  lightWrap(x, bg, soft, 4, 0.55);
   // atmosphere: veiling glare lifts everything near the sun
   glow(x, sx, sy, w * 0.7, h * 0.6, [255, 186, 110], 0.16, 'screen');
   // the sun itself, peeking between them
@@ -982,7 +993,7 @@ function rooftopSky(x: Ctx, r: Rnd, w: number, h: number) {
   const cloud = field(260, 202, (u, v) => {
     const q = (uu: number, vv: number) => {
       const warp = fbm(uu * 2, vv * 2, 91, 3) * 0.5;
-      return fbm(uu * 2.6 + warp, vv * 3.4 - warp, 57, 6) + (0.62 - vv) * 0.35;
+      return fbm(uu * 2.6 + warp, vv * 3.4 - warp, 57, 6) + 0.06 - Math.abs(vv - 0.5) * 0.4 + Math.abs(uu - 0.5) * 0.12;
     };
     const n = q(u, v);
     const dens = smooth(0.52, 0.66, n);
@@ -1235,8 +1246,6 @@ const SCENES: SceneDef[] = [
   { draw: rooftopSky, dev: { bloom: 0.3, bloomT: 0.8, contrast: 0.4, lift: 0.03, shoulder: 0.02, sat: 1.02, vignette: 0.3, grain: 7, warmth: 0.1 } },
 ];
 export const SAMPLE_COUNT = SCENES.length;
-/** @internal timing probe for the dev harness */
-export const renderSceneForTest = (i: number) => renderScene(norm(i));
 
 const norm = (i: number) => ((i % SCENES.length) + SCENES.length) % SCENES.length;
 
@@ -1246,12 +1255,8 @@ function renderScene(idx: number): HTMLCanvasElement {
   if (!x) return c;
   const r = prng(0x9e3779b1 + idx * 7919);
   const def = SCENES[idx];
-  const t0 = performance.now();
   def.draw(x, r, SAMPLE_W, SAMPLE_H);
-  const t1 = performance.now();
   develop(x, SAMPLE_W, SAMPLE_H, def.dev, 0x2545f491 + idx * 977);
-  (globalThis as unknown as { __pbT?: number[][] }).__pbT ??= [];
-  (globalThis as unknown as { __pbT: number[][] }).__pbT.push([idx, Math.round(t1 - t0), Math.round(performance.now() - t1)]);
   return c;
 }
 
@@ -1311,11 +1316,7 @@ function loadOwnerPhotos(list: Photo[]) {
       if (!x || !c.width || !c.height) return;
       x.drawImage(img, 0, 0, c.width, c.height);
       owner[i] = c;
-      const p = list[i];
-      p.canvas = c;
-      p.w = c.width;
-      p.h = c.height;
-      bump();
+      swapIn(list[i], c);
     };
     img.onerror = () => {
       /* unreadable file: keep the generated scene */
@@ -1324,14 +1325,64 @@ function loadOwnerPhotos(list: Photo[]) {
   });
 }
 
+/** two-colour wash per scene, shown for the few frames before the real render lands */
+const DRAFT: [string, string][] = [
+  ['#b08a6a', '#3a2516'], ['#1a1430', '#2a1420'], ['#c4566a', '#3a1d38'], ['#0c0f1c', '#121424'],
+  ['#e9dcc4', '#5a3a22'], ['#1a0f2a', '#07050d'], ['#6e9fd0', '#2f2a2c'],
+];
+function draft(idx: number): HTMLCanvasElement {
+  const [c, x] = mk(SAMPLE_W / 4, SAMPLE_H / 4);
+  if (!x) return c;
+  const g = x.createLinearGradient(0, 0, 0, c.height);
+  g.addColorStop(0, DRAFT[idx][0]);
+  g.addColorStop(1, DRAFT[idx][1]);
+  x.fillStyle = g;
+  x.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+
+/** swap a finished canvas into a registered photo (same id, so every film using it simply re-renders) */
+function swapIn(p: Photo, c: HTMLCanvasElement) {
+  p.canvas = c;
+  p.w = c.width;
+  p.h = c.height;
+  bump();
+}
+
+/** develop the generated scenes one per idle slot so start-up (and the intro reel) never stalls */
+function renderInBackground(list: Photo[]) {
+  const idle: (cb: () => void) => void =
+    typeof requestIdleCallback === 'function' ? (cb) => requestIdleCallback(cb, { timeout: 120 }) : (cb) => setTimeout(cb, 16);
+  let i = 0;
+  const step = () => {
+    while (i < list.length && owner[i]) i++;
+    if (i >= list.length) {
+      bump(); // one repaint for the whole batch, not one per scene
+      return;
+    }
+    const idx = i++;
+    const c = base(idx);
+    const p = list[idx];
+    // swapped silently: films painted from now on pick it up, the final bump repaints the rest
+    p.canvas = c;
+    p.w = c.width;
+    p.h = c.height;
+    if (idx === 2) bump(); // the hero strip's frames are ready: show them early
+    idle(step);
+  };
+  idle(step);
+}
+
 let cache: Photo[] | null = null;
 /**
- * Registers the demo photos in the photo store (so the renderer can use them). Synchronous: the generated
- * scenes are there immediately; owner photos replace them in place (same photo ids) once decoded.
+ * Registers the demo photos in the photo store (so the renderer can use them). Synchronous: each id exists
+ * immediately (a soft colour wash), the generated scene is swapped in a moment later, and owner photos
+ * replace it (same ids) once decoded.
  */
 export function samplePhotos(): Photo[] {
   if (!cache) {
-    cache = SCENES.map((_, i) => addPhoto(base(i), true));
+    cache = SCENES.map((_, i) => addPhoto(generated[i] ?? draft(i), true));
+    renderInBackground(cache);
     loadOwnerPhotos(cache);
   }
   return cache;

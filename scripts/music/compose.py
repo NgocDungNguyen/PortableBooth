@@ -103,6 +103,11 @@ def SHELF(fc, db):
     return lambda f: 1 + (g - 1) / (1 + (fc / np.maximum(f, 1e-3)) ** 2)
 
 
+def LOWSHELF(fc, db):
+    g = 10 ** (db / 20)
+    return lambda f: 1 + (g - 1) / (1 + (np.maximum(f, 1e-3) / fc) ** 2)
+
+
 def PEAK(fc, db, width=1.0):
     """bell, width in octaves"""
     g = 10 ** (db / 20)
@@ -337,7 +342,7 @@ def ep(f, dur, vel=0.8, rel=0.3, wow=0.0, seed=0):
     r = rng_for('ep', seed)
     drift = 2 ** (wow * np.sin(TAU * 0.55 * t + r.random() * 6) / 1200)  # tape wow, in cents
     ph = TAU * np.cumsum(np.full(n, f) * drift) / SR
-    idx = vel * (1.9 * np.exp(-t / 0.22) + 0.35)
+    idx = vel * (2.6 * np.exp(-t / 0.25) + 0.5)
     y = np.sin(ph + idx * np.sin(ph))
     y += 0.10 * vel * np.sin(14.0 * ph) * np.exp(-t / 0.018)
     y += 0.25 * np.sin(2 * ph) * np.exp(-t / 0.4)
@@ -421,7 +426,7 @@ def bass_saw(f, dur, cutoff=230.0, amt=1300.0, decay=0.11, rel=0.04):
     s = 0.6 * saw(f, n) + 0.45 * saw(f * 1.005, n, 0.5)
     dark = filt(s, LP(cutoff, 2))
     bright = filt(s, LP(cutoff + amt, 2))
-    y = dark + (bright - dark) * np.exp(-t / decay) + 0.55 * np.sin(TAU * f * t)
+    y = dark + (bright - dark) * np.exp(-t / decay) + 0.35 * np.sin(TAU * f * t)
     return np.tanh(1.3 * y * shape(n, 0.003, dur, rel)) * 0.8
 
 
@@ -501,6 +506,15 @@ class Song:
         self.s16 = self.beat / 4
         self.barlen = self.beat * 4
         self.length = length if length is not None else bars * self.barlen
+        if loop:
+            # a whole number of AAC frames (1024 samples): no encoder padding at the end, so the loop point is clean
+            n = int(round(self.length * SR / 1024)) * 1024
+            k = n / SR / self.length
+            self.beat *= k
+            self.s16 *= k
+            self.barlen *= k
+            self.bpm /= k
+            self.length = n / SR
         self.n = int(round(self.length * SR))
         self.total = self.n + int(tail * SR)
         self.buses = {}
@@ -659,17 +673,17 @@ def golden_hour():
         if sec != 'intro':
             line = [(0, 5, r), (7, 2, r), (10, 3, r * 1.5), (14, 1.6, r * (2 ** (-1 / 12)) if bar % 2 else r * 2)]
             if sec == 'break':
-                line = [(0, 14, r)]
+                line = [(0, 6, r), (8, 6, r)]
             for step, length, f in line:
-                s.put('bass', bass_sine(f, length * s.s16), s.t(bar, step), 0.62, jitter=0.002)
+                s.put('bass', bass_sine(f, length * s.s16), s.t(bar, step), 0.42, jitter=0.002)
         # drums
         if sec in ('A', 'B', 'A2', 'intro'):
             ks = [0, 10] if bar % 2 == 0 else [0, 7, 10]
             for st in ks:
-                s.kick(s.t(bar, st), kick(118.0, 50.0, 0.04, 0.26, 0.08, 1.3, 4500.0), 0.8 if sec != 'intro' else 0.5)
+                s.kick(s.t(bar, st), kick(118.0, 52.0, 0.04, 0.24, 0.12, 1.3, 5000.0), 0.7 if sec != 'intro' else 0.45)
             if sec != 'intro':
                 for st in (4, 12):
-                    s.put('drums', snare(205.0, 0.5, 0.13, 1300.0, 6500.0, bar % 4), s.t(bar, st), 0.5, pan=0.05, verb=0.12, jitter=0.003)
+                    s.put('drums', snare(205.0, 0.5, 0.13, 1300.0, 8500.0, bar % 4), s.t(bar, st), 0.6, pan=0.05, verb=0.12, jitter=0.003)
                     s.put('drums', rim(), s.t(bar, st), 0.12, pan=-0.1)
                 if bar % 4 == 3:
                     s.put('drums', snare(205.0, 0.5, 0.13, 1300.0, 6500.0, 7), s.t(bar, 15), 0.14, jitter=0.003)
@@ -678,7 +692,7 @@ def golden_hour():
                 acc = (0.75, 0.3, 0.5, 0.32)[st % 4]
                 if sec == 'intro' and st % 2:
                     continue
-                s.put('drums', hat(0.04, (bar * 16 + st) % 5), s.t(bar, st), acc * 0.42 * (0.85 + 0.3 * s.rng.random()), pan=0.3, jitter=0.003)
+                s.put('drums', hat(0.04, (bar * 16 + st) % 5), s.t(bar, st), acc * 0.62 * (0.85 + 0.3 * s.rng.random()), pan=0.3, jitter=0.003)
             if bar % 4 == 3:
                 s.put('drums', hat(0.22, 2), s.t(bar, 14), 0.22, pan=0.3)
         # vibes melody
@@ -704,11 +718,11 @@ def golden_hour():
     trem = 0.13 * np.sin(TAU * tt / (s.beat * 2))
     s.buses['keys'] *= np.stack([1 + trem, 1 - trem])
     ir = make_ir(1.5, 0.02, 3800.0, seed=21)
-    mix = mixdown(s, {'kick': 1.0, 'drums': 0.9, 'bass': 1.0, 'keys': 1.0, 'lead': 1.0, 'pad': 0.8, 'vinyl': 0.35, 'verb': 0.5, 'delay': 0.7},
+    mix = mixdown(s, {'kick': 1.0, 'drums': 0.9, 'bass': 1.0, 'keys': 1.0, 'lead': 1.0, 'pad': 0.8, 'vinyl': 0.6, 'verb': 0.5, 'delay': 0.7},
                   ir, delay=(s.beat * 0.75, 0.38, 6, 3000.0, 400.0),
                   duck={'keys': (0.22, 0.2), 'bass': (0.35, 0.12), 'pad': (0.3, 0.2), 'lead': (0.12, 0.2)})
     y = finish(s, mix)
-    return s, master(y, True, -17.0, -1.0, [LP(10500, 1), PEAK(220, 1.5, 1.5), SHELF(6000, -2)], sat=1.1)
+    return s, master(y, True, -17.0, -1.0, [LP(13500, 1), LOWSHELF(70, -2.0), PEAK(300, -1.5, 1.5), SHELF(3500, 2.5)], sat=1.1)
 
 
 def night_drive():
@@ -773,11 +787,11 @@ def night_drive():
     i1 = int(s.t(4) * SR)
     s.buses['arp'][:, :i1] = sweep(s.buses['arp'][:, :i1], lambda tt: 700 * (6000 / 700) ** min(1, tt / s.t(4)))
     ir = make_ir(2.2, 0.025, 5200.0, seed=31)
-    mix = mixdown(s, {'kick': 1.0, 'drums': 0.85, 'bass': 0.95, 'pad': 0.8, 'arp': 1.0, 'lead': 1.0, 'fx': 0.8, 'verb': 0.55, 'delay': 0.6},
+    mix = mixdown(s, {'kick': 0.8, 'drums': 1.0, 'bass': 0.58, 'pad': 1.05, 'arp': 1.4, 'lead': 1.35, 'fx': 0.8, 'verb': 0.55, 'delay': 0.6},
                   ir, delay=(s.beat * 0.75, 0.45, 7, 4200.0, 450.0),
                   duck={'pad': (0.45, 0.18), 'bass': (0.5, 0.12), 'arp': (0.25, 0.15), 'verb': (0.3, 0.2)})
     y = finish(s, mix)
-    return s, master(y, True, -16.0, -1.0, [PEAK(90, 1.5, 1.2), PEAK(400, -1.5, 1.5), SHELF(8000, 1.0), LP(16000, 1)], sat=1.15)
+    return s, master(y, True, -16.0, -1.0, [LOWSHELF(60, -3.0), PEAK(400, -1.5, 1.5), SHELF(4000, 2.0), LP(16000, 1)], sat=1.15)
 
 
 def sunday_pop():
@@ -807,7 +821,7 @@ def sunday_pop():
             dur = (nxt - st) * s.s16 + 0.03
             strings = fs if d == 'D' else fs[-4:][::-1]
             for k, f in enumerate(strings):
-                s.put('gtr', pluck(f, dur, 0.5, 0.9, 'saw', 0.04, 0.00008), s.t(bar, st) + k * 0.008, 0.2 * vel * (0.9 + 0.2 * s.rng.random()),
+                s.put('gtr', pluck(f, dur, 0.62, 0.9, 'saw', 0.04, 0.00008), s.t(bar, st) + k * 0.008, 0.2 * vel * (0.9 + 0.2 * s.rng.random()),
                       pan=-0.45 + 0.15 * k / len(strings), verb=0.12, jitter=0.002)
             # double-tracked, panned right, a hair later
             if sec != 'intro':
@@ -828,7 +842,7 @@ def sunday_pop():
                 s.put('drums', clap(0.12, bar % 2), s.t(bar, st) + 0.004, 0.33 if chorus else 0.18, pan=0.12, verb=0.18)
             for st in range(0, 16, 2 if not chorus else 1):
                 acc = 0.55 if st % 4 == 0 else 0.42 if st % 2 == 0 else 0.22
-                s.put('drums', hat(0.04 if not (chorus and st % 4 == 2) else 0.16, st % 4), s.t(bar, st), acc * 0.4, pan=0.28)
+                s.put('drums', hat(0.04 if not (chorus and st % 4 == 2) else 0.16, st % 4), s.t(bar, st), acc * 0.55, pan=0.28)
             if chorus:
                 for st in range(16):
                     s.put('drums', tambourine(st % 3), s.t(bar, st), (0.4 if st % 4 == 0 else 0.22), pan=-0.4, jitter=0.002)
@@ -852,11 +866,11 @@ def sunday_pop():
             for step, length, nn in counter[bar % 4]:
                 s.put('bells', bell(hz(nn), 1.4, 'glock', 0.7), s.t(bar, step), 0.2, pan=-0.2, verb=0.3, delay=0.2)
     ir = make_ir(1.6, 0.02, 6500.0, seed=41)
-    mix = mixdown(s, {'kick': 1.0, 'drums': 0.9, 'bass': 0.95, 'gtr': 1.0, 'bells': 1.0, 'pad': 0.7, 'fx': 0.8, 'verb': 0.45, 'delay': 0.5},
+    mix = mixdown(s, {'kick': 0.85, 'drums': 1.1, 'bass': 0.62, 'gtr': 1.3, 'bells': 1.1, 'pad': 0.8, 'fx': 0.8, 'verb': 0.45, 'delay': 0.5},
                   ir, delay=(s.beat * 0.5, 0.3, 5, 5000.0, 600.0),
                   duck={'pad': (0.3, 0.15), 'bass': (0.3, 0.1), 'gtr': (0.12, 0.12)})
     y = finish(s, mix)
-    return s, master(y, True, -16.0, -1.0, [HP(40, 1), PEAK(300, -1.5, 1.5), SHELF(7000, 1.5)], sat=1.1)
+    return s, master(y, True, -16.0, -1.0, [HP(40, 1), LOWSHELF(80, -1.5), PEAK(300, -2.0, 1.5), SHELF(3500, 2.5)], sat=1.1)
 
 
 def intro():
@@ -879,7 +893,7 @@ def intro():
             [(0, 4, 'B5'), (4, 4, 'D6'), (8, 8, 'F#6')],
             [(0, 4, 'E6'), (4, 4, 'D6'), (8, 4, 'B5'), (12, 4, 'C#6')],
             [(0, 16, 'D6')]]
-    hard = kick(170.0, 46.0, 0.03, 0.33, 0.32, 1.7, 8000.0)
+    hard = kick(175.0, 53.0, 0.028, 0.2, 0.42, 1.6, 9500.0)
     for bar in range(20):
         sc = bar // 4
         b4 = bar % 4
@@ -965,7 +979,7 @@ def intro():
         if sc == 4:
             if b4 == 0:
                 s.put('drums', crash(3.0, 4), t0, 0.5, verb=0.4)
-                s.put('bass', boom(), t0, 0.55)
+                s.put('bass', boom(), t0, 0.3)
                 for f in fs:
                     s.put('keys', pluck(f * 2, 0.6, 0.7, 0.6, 'saw', 0.3), t0, 0.16, verb=0.5)
             s.put('pad', pad(fs, s.barlen if b4 < 3 else 6.0, 5, 15.0, 2600.0 - 300 * b4, 0.05 if b4 == 0 else 0.25, 1.5, seed=b4, bright=1.5),
@@ -983,7 +997,7 @@ def intro():
                 s.put('bass', bass_sine(r, s.barlen * 0.5), t0, 0.5)
                 s.put('bass', bass_sine(hz('A1'), s.barlen * 0.5), s.t(bar, 8), 0.5)
             else:
-                s.put('bass', bass_sine(r, 4.0, 1.5), t0, 0.5)
+                s.put('bass', bass_sine(r, 3.0, 1.5), t0, 0.28)
             for step, length, nn in box5[b4]:
                 s.put('bells', bell(hz(nn), 2.6 if b4 == 3 else 1.8, 'glock'), s.t(bar, step), 0.3, verb=0.4, delay=0.25)
                 s.put('bells', bell(hz(nn) / 2, 2.0, 'box'), s.t(bar, step), 0.12, verb=0.4)
@@ -1002,7 +1016,7 @@ def intro():
         B = s.bus(name)
         B[:, i0:i1] = sweep(B[:, i0:i1], lambda tt: 350 * (16000 / 350) ** (min(1.0, tt / 7.2) ** 1.6))
     ir = make_ir(2.0, 0.022, 5600.0, seed=61)
-    mix = mixdown(s, {'kick': 1.0, 'drums': 0.85, 'build': 0.9, 'bass': 1.0, 'pad': 0.8, 'keys': 1.0, 'lead': 1.0, 'bells': 1.0, 'fx': 0.85,
+    mix = mixdown(s, {'kick': 0.72, 'drums': 1.0, 'build': 1.0, 'bass': 0.62, 'pad': 0.85, 'keys': 1.2, 'lead': 1.25, 'bells': 1.15, 'fx': 0.9,
                       'verb': 0.55, 'delay': 0.55},
                   ir, delay=(s.beat * 0.75, 0.4, 6, 4200.0, 450.0),
                   duck={'pad': (0.4, 0.16), 'bass': (0.45, 0.11), 'keys': (0.2, 0.12)})
@@ -1013,7 +1027,7 @@ def intro():
     y = finish(s, mix)
     # the start of the file breathes in (no click)
     y[:, : int(0.01 * SR)] *= np.linspace(0, 1, int(0.01 * SR))
-    return s, master(y, False, -16.5, -1.0, [PEAK(400, -1.0, 1.5), SHELF(8000, 1.0)], sat=1.1)
+    return s, master(y, False, -16.5, -1.0, [LOWSHELF(60, -2.0), PEAK(400, -1.0, 1.5), SHELF(8000, 0.5)], sat=1.1)
 
 
 TRACKS = {'golden-hour': golden_hour, 'night-drive': night_drive, 'sunday-pop': sunday_pop, 'intro': intro}
@@ -1048,7 +1062,7 @@ def main():
         peak = float(np.max(np.abs(y)))
         rms = float(np.sqrt(np.mean(y ** 2)))
         print(f'{name:12s} {y.shape[1] / SR:6.2f}s  peak {20 * np.log10(peak):6.2f} dBFS  rms {20 * np.log10(rms):6.2f} dBFS  '
-              f'max GR {-20 * np.log10(gmin):4.1f} dB', flush=True)
+              f'max GR {-20 * np.log10(gmin):4.1f} dB  seam {np.max(np.abs(y[:, -1] - y[:, 0])):.4f}  bpm {song.bpm:.3f}', flush=True)
         encode(os.path.join(OUT, f'{name}.m4a'), y)
         if a.wav:
             os.makedirs(a.wav, exist_ok=True)

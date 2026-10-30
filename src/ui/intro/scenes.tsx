@@ -343,8 +343,8 @@ function DropTile({ local, i, ppm, doc, start }: { local: MotionValue<number>; i
   const r = lay.slots[i];
   const id = reelDocs().photoIds[i];
   const p = useSpringProgress(local, start, 200, 21);
-  const y = useTransform(p, (v) => (1 - v) * -ppm * 60);
-  const x = useTransform(p, (v) => (1 - v) * -ppm * 40);
+  const y = useTransform(p, (v) => (1 - v) * -ppm * 22);
+  const x = useTransform(p, (v) => (1 - v) * -ppm * 55);
   const scale = useTransform(p, (v) => 1.4 - 0.4 * v);
   const rotate = useTransform(p, (v) => (1 - v) * (i % 2 ? 9 : -9));
   const fade = useProgress(local, start + 520, 160, (t) => t);
@@ -479,7 +479,7 @@ function PanelTabs({ local, labels, active, moves }: { local: MotionValue<number
   const thumb = useTransform(tx, (v) => `${v * 100}%`);
   return (
     <At x={PANEL.x + 2} y={PANEL.y + 3} w={PANEL.w - 4} h={7.5} className="reel-ptabs" style={{ gridTemplateColumns: `repeat(${labels.length}, 1fr)` }}>
-      <motion.span className="reel-ptabs-thumb" style={{ x: thumb, width: `calc((100% - 0.6cqw) / ${labels.length})` }} />
+      <motion.span className="reel-ptabs-thumb" style={{ x: thumb, width: `calc((100% - 1.2cqw) / ${labels.length})` }} />
       {labels.map((l, i) => <span key={l} data-on={i === active ? '' : undefined}>{l}</span>)}
     </At>
   );
@@ -490,6 +490,7 @@ export function StyleScene({ local, stickersReady }: SceneProps) {
   const look = useStep(local, LOOK_TAPS);
   const tab = useStep(local, [STICKERS_TAB + 80, TEXT_TAB + 80]);
   const dropped = useStep(local, [STAR_DROP]) > 0;
+  const pressed = useStep(local, [STAR_PRESS]) > 0;
   const sizeStep = useStep(local, d.textAt.sizes.slice(1).map((_, i) => HANDLE_PRESS + 80 + ((i + 1) * (HANDLE_END - HANDLE_PRESS - 80)) / (d.textAt.sizes.length - 1)));
   const hasText = tab >= 2;
   const doc = hasText && stickersReady ? d.textSteps[sizeStep] : dropped && stickersReady ? d.withSticker : d.looks[look].doc;
@@ -518,7 +519,7 @@ export function StyleScene({ local, stickersReady }: SceneProps) {
   const lookPress = usePress(local, LOOK_TAPS, 0.06);
   const bump = useTransform(local, (v) => 1 + 0.025 * (pulse(v - STAR_DROP, 340) + LOOK_TAPS.reduce((m, t) => Math.max(m, pulse(v - t, 300)), 0)));
   const labels = ['Original', ...d.looks.slice(1).map((l) => l.name)];
-  const now = tab === 0 ? { k: 'Look', l: labels[look] } : tab === 1 ? { k: 'Sticker', l: dropped ? 'Chrome star' : 'Pick one' } : { k: 'Text', l: sizeStep > 0 ? 'Resize' : 'Smile!' };
+  const now = tab === 0 ? { k: 'Look', l: labels[look] } : tab === 1 ? { k: 'Sticker', l: pressed ? 'Chrome star' : 'Shapes' } : { k: 'Text', l: sizeStep > 0 ? 'Resize' : 'Best night' };
   return (
     <div className="absolute inset-0">
       <At {...EDIT_FILM} style={{ ...filmIn, scale: bump }}>
@@ -567,7 +568,7 @@ export function StyleScene({ local, stickersReady }: SceneProps) {
         )}
         {tab === 2 && (
           <>
-            <At x={50.5} y={20} w={41} h={9} className="reel-field">SMILE!<i className="reel-caret" /></At>
+            <At x={50.5} y={20} w={41} h={9} className="reel-field">BEST NIGHT<i className="reel-caret" /></At>
             <At x={50.5} y={33} w={42} h={7} className="flex gap-[1.4cqw]">
               <span className="reel-pill" data-on="">Bold</span>
               <span className="reel-pill">Serif</span>
@@ -682,7 +683,7 @@ export function FrameScene({ local }: SceneProps) {
             <span data-on={i === 0 && leakOn ? '' : undefined}>{c.label}</span>
           </At>
         ))}
-        <At x={50.5} y={83} w={41} h={6} className="reel-meter">
+        <At x={50.5} y={84} w={41} h={2.6} className="reel-meter">
           <motion.i style={{ scaleX: useTransform(leak, (v) => 0.15 + 0.7 * v) }} />
         </At>
       </motion.div>
@@ -708,7 +709,7 @@ export function FrameScene({ local }: SceneProps) {
 
 const PRINT_TAP = 1600;
 const SHEET_OUT = 2050;
-const FEED = [2500, 4100];
+const FEED = [2250, 3950];
 const SHARE_IN = 4750;
 const SAVE_TAP = 6150;
 export const START_AT = 6500;
@@ -752,12 +753,12 @@ export function SaveScene({ local, stickersReady }: SceneProps) {
   const sheetY = useKf(local, [[250, 62], [800, 0], [SHEET_OUT, 0], [SHEET_OUT + 450, 62]], easeOutCubic);
   const preview = useKf(local, [[100, 0], [500, 1], [SHEET_OUT, 1], [SHEET_OUT + 300, 0]]);
   const printPress = usePress(local, [PRINT_TAP], 0.05);
-  const slotOp = useKf(local, [[SHEET_OUT + 200, 0], [SHEET_OUT + 450, 1], [SHARE_IN, 1], [SHARE_IN + 300, 0]]);
+  const slotOp = useKf(local, [[SHEET_OUT, 0], [SHEET_OUT + 250, 1], [SHARE_IN, 1], [SHARE_IN + 300, 0]]);
   const feed = useProgress(local, FEED[0], FEED[1] - FEED[0], steps(20));
   const feedY = useTransform(feed, (v) => `${(v - 1) * 100}%`);
   const shrink = useProgress(local, SHARE_IN - 100, 650, easeInOutCubic);
   const groupX = useTransform(shrink, (v) => cq(-25 * v));
-  const groupS = useTransform(shrink, (v) => 1 - 0.4 * v);
+  const groupS = useTransform(shrink, (v) => 1 - 0.45 * v);
   const dpi = useSpringProgress(local, FEED[1] - 100, 320, 20);
   const dpiS = useTransform(dpi, (v) => Math.max(0, v));
   const dpiOp = useTransform([dpi, shrink] as MotionValue[], ([v, s]: number[]) => clamp01(v) * (1 - s));
@@ -767,11 +768,11 @@ export function SaveScene({ local, stickersReady }: SceneProps) {
   const qrOp = useTransform(qr, (v) => clamp01(v * 1.6));
   const savePress = usePress(local, [SAVE_TAP], 0.12);
   const saved = useStep(local, [SAVE_TAP + 100]) > 0;
-  const SB = { x: 4, y: 64, w: 92, h: 63 };
+  const SB = { x: 4, y: 73, w: 92, h: 54 };
   const SH = { x: 4, y: 69, w: 92, h: 58 };
   return (
     <div className="absolute inset-0">
-      <At x={32} y={6} w={36} h={54} style={{ opacity: preview }}>
+      <At x={30} y={6} w={40} h={62} style={{ opacity: preview }}>
         <FilmCanvas doc={doc} label="Finished film strip" />
       </At>
       <motion.div className="absolute inset-0" style={{ x: groupX, scale: groupS, transformOrigin: '50% 4%' }}>

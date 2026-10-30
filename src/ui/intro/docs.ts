@@ -79,13 +79,13 @@ export function reelDocs(): ReelDocs {
     doc: id === 'original' ? fill[3] : previewDoc('strip', 3, id, 0),
     thumb: previewDoc('instant', 1, id, 2),
   }));
-  const base = looks[looks.length - 1].doc;
+  const base: FilmDoc = { ...looks[looks.length - 1].doc, brandMark: false };
 
   const stickerAt = { x: 38, y: 22, size: 17, rot: 12 };
   const star: Item = { ...newSticker('shapes/chrome-star', false, stickerAt.x, stickerAt.y, stickerAt.size), rot: stickerAt.rot };
   const heart: Item = { ...newSticker('shapes/heart-solid', true, 11, 64, 10), tint: '#FF5C7A', rot: -12 };
   const withSticker: FilmDoc = { ...base, items: [star] };
-  const textAt = { x: 25.5, y: 144, sizes: [4.6, 5.2, 5.8, 6.4, 7, 7.6], rot: -3, text: 'BEST NIGHT' };
+  const textAt = { x: 25.5, y: 144, sizes: [4.4, 4.9, 5.4, 5.9, 6.4, 6.9], rot: -3, text: 'BEST NIGHT' };
   const label = (size: number): Item => ({ ...newText(textAt.text, '#14121F', textAt.x, textAt.y), font: 'bold' as const, size, bg: '#C6F432', rot: textAt.rot });
   const textSteps = textAt.sizes.map((s) => ({ ...base, items: [star, heart, label(s)] }));
   const decorated = textSteps[textSteps.length - 1];

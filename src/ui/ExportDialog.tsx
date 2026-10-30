@@ -1,5 +1,4 @@
 import { Copy, Download, Loader2, Lock, Printer, Radio, Share, Smartphone, X } from 'lucide-react';
-import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { computeLayout } from '../film/layout';
 import type { FilmDoc } from '../film/types';
@@ -73,6 +72,11 @@ export function ExportDialog() {
     return () => clearTimeout(t);
   }, [exportOpen, kind, getOut]);
 
+  const closeBeam = () => {
+    setBeamOpen(false);
+    requestAnimationFrame(() => sendRef.current?.focus());
+  };
+
   const save = async () => {
     setBusy('save');
     try {
@@ -121,11 +125,19 @@ export function ExportDialog() {
     <dialog
       ref={ref}
       onClose={() => setExportOpen(false)}
-      onClick={(e) => e.target === ref.current && setExportOpen(false)}
-      aria-labelledby="export-title"
-      className="mx-auto mb-0 mt-auto max-h-[94dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-line2 bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/70 backdrop:backdrop-blur-sm md:m-auto md:max-h-[92dvh] md:w-[min(94vw,60rem)] md:overflow-hidden md:rounded-2xl"
+      onClick={(e) => e.target === ref.current && !beamOpen && setExportOpen(false)}
+      onKeyDown={(e) => {
+        // Esc in the send view goes back to the options instead of closing everything
+        if (e.key === 'Escape' && beamOpen) {
+          e.preventDefault();
+          closeBeam();
+        }
+      }}
+      aria-labelledby={beamOpen ? 'beam-send-title' : 'export-title'}
+      className="mx-auto mb-0 mt-auto max-h-[94dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-line2 bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/70 backdrop:backdrop-blur-sm md:m-auto md:max-h-[92dvh] md:w-[min(94vw,60rem)] md:rounded-2xl"
     >
-      <div className="grid md:h-[min(46rem,92dvh)] md:grid-cols-[1fr_23rem]">
+      {exportOpen && beamOpen && <SendNearby open onClose={closeBeam} getFile={getFile} />}
+      <div className={`${beamOpen ? 'hidden' : 'grid'} md:h-[min(46rem,92dvh)] md:grid-cols-[1fr_23rem]`}>
         <div className="stage-bg grid h-[30dvh] place-items-center p-4 md:h-full md:p-6">
           {exportOpen && <FilmCanvas doc={doc} label="Your finished film" />}
         </div>
@@ -146,13 +158,13 @@ export function ExportDialog() {
           <div className="flex flex-col gap-2">
             <ActionCard btnRef={sendRef} icon={<Radio size={20} />} title="Send to a nearby phone" sub="Direct, phone to phone, on the same Wi-Fi" onClick={() => setBeamOpen(true)} disabled={!!busy} />
             <ActionCard icon={<Share size={20} />} title="Share to nearby devices / apps" sub={shareOk ? 'AirDrop, Quick Share, Nearby Sharing and your apps' : 'No share sheet here: saves the photo instead'} onClick={share} busy={busy === 'share'} disabled={!!busy} />
-            <div className={`grid gap-2 ${copyOk ? 'grid-cols-2' : ''}`}>
-              <button className="btn btn-primary btn-lg" onClick={save} disabled={!!busy}>
+            <div className={`grid gap-2 ${copyOk ? 'grid-cols-[1fr_auto]' : ''}`}>
+              <button className="btn btn-primary btn-lg whitespace-nowrap" onClick={save} disabled={!!busy}>
                 {busy === 'save' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Download size={20} aria-hidden />} Save to device
               </button>
               {copyOk && (
-                <button className="btn btn-lg" onClick={copy} disabled={!!busy}>
-                  {busy === 'copy' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Copy size={20} aria-hidden />} Copy image
+                <button className="btn btn-lg whitespace-nowrap px-4" onClick={copy} disabled={!!busy} aria-label="Copy image">
+                  {busy === 'copy' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Copy size={20} aria-hidden />} Copy
                 </button>
               )}
             </div>
@@ -164,7 +176,6 @@ export function ExportDialog() {
           <p className="mt-auto flex items-center gap-2 text-xs text-muted"><Lock size={14} aria-hidden /> Made on your device. Nothing is uploaded.</p>
         </div>
       </div>
-      {exportOpen && createPortal(<SendNearby open={beamOpen} onClose={() => (setBeamOpen(false), requestAnimationFrame(() => sendRef.current?.focus()))} getFile={getFile} />, document.body)}
     </dialog>
   );
 }

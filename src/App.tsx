@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { audio } from './audio';
 import type { FormatId } from './film/types';
 import { StudioProvider, useStudio } from './state/studio';
+import { About } from './ui/About';
 import { Home } from './ui/Home';
 import { Intro } from './ui/intro/Intro';
 import { routeMotion, useMotionOK } from './ui/motion';
@@ -11,8 +13,9 @@ import { ThemeProvider } from './ui/ThemeToggle';
 const loadStudio = () => import('./ui/Studio');
 const Studio = lazy(loadStudio);
 
-type Route = 'home' | 'studio';
-const read = (): Route => (location.hash === '#studio' ? 'studio' : 'home');
+type Route = 'home' | 'studio' | 'about';
+const read = (): Route => (location.hash === '#studio' ? 'studio' : location.hash === '#about' ? 'about' : 'home');
+const TITLES: Record<Route, string> = { home: 'PortableBooth', studio: 'Studio · PortableBooth', about: 'About · PortableBooth' };
 
 function Router() {
   const ok = useMotionOK();
@@ -28,8 +31,8 @@ function Router() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
   useEffect(() => {
-    document.title = route === 'studio' ? 'Studio · PortableBooth' : 'PortableBooth';
-    if (route === 'studio') setIntro(false);
+    document.title = TITLES[route];
+    if (route !== 'home') setIntro(false);
   }, [route]);
   // warm the studio chunk while the reel plays
   useEffect(() => {
@@ -52,6 +55,22 @@ function Router() {
     },
     [startFrom, doc, setTool],
   );
+  // music: browsers only allow sound after a gesture, so the first tap / key press unlocks whatever is queued.
+  // Without the intro (deep link to #studio or #about) the background track is queued straight away.
+  useEffect(() => {
+    if (!intro) audio.playBackground();
+    const once = () => {
+      audio.unlock();
+      window.removeEventListener('pointerdown', once, true);
+      window.removeEventListener('keydown', once, true);
+    };
+    window.addEventListener('pointerdown', once, true);
+    window.addEventListener('keydown', once, true);
+    return () => {
+      window.removeEventListener('pointerdown', once, true);
+      window.removeEventListener('keydown', once, true);
+    };
+  }, []);
   const closeIntro = useCallback(() => setIntro(false), []);
   const openIntro = useCallback(() => setIntro(true), []);
 
@@ -61,6 +80,10 @@ function Router() {
         {route === 'home' ? (
           <motion.div key="home" {...routeMotion(ok)} inert={intro}>
             <Home onStart={start} onHowItWorks={openIntro} ready={!intro} />
+          </motion.div>
+        ) : route === 'about' ? (
+          <motion.div key="about" {...routeMotion(ok)}>
+            <About onStart={() => start()} />
           </motion.div>
         ) : (
           <motion.div key="studio" {...routeMotion(ok)}>
