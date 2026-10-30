@@ -208,7 +208,7 @@ export function Stage() {
                       className="pointer-events-auto absolute grid size-11 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize place-items-center touch-none"
                       style={{ left: `${cx * 100}%`, top: `${cy * 100}%` }}
                     >
-                      <span className="size-4 rounded-[4px] border-2 border-accent bg-bg shadow md:size-3" />
+                      <span className="size-3.5 rounded-[4px] border-2 border-accent bg-bg shadow md:size-3" />
                     </span>
                   ))}
                 {!sel.locked && (
@@ -220,7 +220,7 @@ export function Stage() {
                       className="pointer-events-auto absolute left-1/2 grid size-11 -translate-x-1/2 cursor-grab place-items-center touch-none"
                       style={{ top: -52 }}
                     >
-                      <span className="size-4 rounded-full border-2 border-accent bg-bg shadow" />
+                      <span className="size-3.5 rounded-full border-2 border-accent bg-bg shadow" />
                     </span>
                   </>
                 )}
