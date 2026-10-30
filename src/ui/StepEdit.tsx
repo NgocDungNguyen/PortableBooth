@@ -1,4 +1,4 @@
-import { Crop, Frame, Smile, SlidersHorizontal, Sparkles, Type } from 'lucide-react';
+import { Crop, Frame, Redo2, Smile, SlidersHorizontal, Sparkles, Type, Undo2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useStudio } from '../state/studio';
 import { AdjustPanel, FilterPanel, FramePanel, PhotoPanel, SelectionBar, StickerPanel, TextPanel } from './edit/Panels';
@@ -15,7 +15,7 @@ const TABS = [
 
 export function StepEdit() {
   const [tab, setTab] = useState<(typeof TABS)[number]['id']>('filter');
-  const { selection } = useStudio();
+  const { selection, undo, redo, canUndo, canRedo } = useStudio();
   const list = useRef<HTMLDivElement>(null);
   const Active = TABS.find((t) => t.id === tab)!.Panel;
 
@@ -30,12 +30,20 @@ export function StepEdit() {
   };
 
   return (
-    <div className="grid flex-1 gap-4 md:grid-cols-[1fr_25rem]">
-      <div className="min-h-[44dvh] md:min-h-[68dvh]">
+    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1fr)_25rem]">
+      <div className="relative min-h-[36dvh] min-w-0 md:min-h-[68dvh]">
         <Stage />
+        <div className="absolute right-0 top-0 flex gap-2">
+          <button className="btn btn-icon btn-sm" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo">
+            <Undo2 size={22} aria-hidden />
+          </button>
+          <button className="btn btn-icon btn-sm" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo">
+            <Redo2 size={22} aria-hidden />
+          </button>
+        </div>
       </div>
-      <div className="panel flex max-h-[40dvh] min-h-0 flex-col p-3 md:max-h-[72dvh]">
-        <div ref={list} role="tablist" aria-label="Tools" onKeyDown={onKey} className="no-scrollbar -mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+      <div className="panel flex max-h-[38dvh] min-h-0 min-w-0 flex-col p-3 md:max-h-[72dvh]">
+        <div ref={list} role="tablist" aria-label="Tools" onKeyDown={onKey} className="no-scrollbar -mx-1 mb-3 flex gap-1 overflow-x-auto px-1 pb-1">
           {TABS.map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -44,8 +52,11 @@ export function StepEdit() {
               aria-selected={tab === id}
               aria-controls="tool-panel"
               tabIndex={tab === id ? 0 : -1}
-              onClick={() => setTab(id)}
-              className={`flex min-h-14 min-w-[4.25rem] flex-1 shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-2 text-xs font-bold transition-colors ${
+              onClick={(e) => {
+                setTab(id);
+                e.currentTarget.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+              }}
+              className={`flex min-h-14 min-w-[3.3rem] flex-1 shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-0.5 text-xs font-bold transition-colors ${
                 tab === id ? 'border-line bg-lemon text-ink' : 'border-transparent hover:bg-surface2'
               }`}
             >

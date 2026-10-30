@@ -9,7 +9,7 @@ import { previewDoc } from './previewDocs';
 
 const SAMPLE_FILTER: Record<FormatId, string> = { strip: 'sunday', instant: 'flash', film35: 'noir' };
 const WIDTH: Record<FormatId, number> = { strip: 104, instant: 150, film35: 108 };
-const SIZE_LABEL: Record<FormatId, string> = { strip: '2×6 in', instant: '54×86 mm', film35: '35mm' };
+const SIZE_LABEL: Record<FormatId, string> = { strip: '2×6 in', instant: '54×86 mm', film35: '50×167 mm' };
 
 /** tiny wireframe of how many frames a layout has */
 function FrameGlyph({ format, frames }: { format: FormatId; frames: number }) {
@@ -52,7 +52,7 @@ export function StepFilm() {
               whileHover={reduce ? undefined : { y: -8 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 220, damping: 18, delay: reduce ? 0 : i * 0.06 }}
-              className={`relative flex min-h-[22rem] w-[13rem] shrink-0 snap-center flex-col items-center justify-between rounded-[2rem] border-[3px] p-4 pb-4 ${
+              className={`relative flex min-h-[20rem] w-[13rem] shrink-0 snap-center flex-col items-center justify-between rounded-[2rem] border-[3px] p-4 pb-4 ${
                 sel ? 'border-line bg-lemon text-ink shadow-[0_8px_0_var(--shadow)]' : 'border-line bg-surface shadow-[0_5px_0_var(--shadow)]'
               }`}
             >

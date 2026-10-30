@@ -36,7 +36,7 @@ export function Home({ onStart }: Props) {
   const heroDoc = previewDoc('strip', 4, 'sunday', 0);
 
   return (
-    <div className="relative">
+    <div className="relative overflow-x-clip">
       {/* ---------- top bar ---------- */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
         <a href="#/" className="flex items-center gap-2 font-display text-xl font-extrabold" aria-label="PortableBooth home">
@@ -92,7 +92,7 @@ export function Home({ onStart }: Props) {
         </div>
 
         {/* the booth: a strip prints out of the slot */}
-        <div className="relative order-1 mx-auto w-full max-w-[22rem] md:order-2">
+        <div className="relative order-1 mx-auto mb-28 w-full max-w-[22rem] md:order-2">
           {[
             { id: 'star', cls: '-left-6 top-10 size-16', r: '-12deg', d: '0s' },
             { id: 'heart', cls: '-right-5 top-40 size-14', r: '10deg', d: '.8s' },
@@ -123,12 +123,12 @@ export function Home({ onStart }: Props) {
               type="button"
               onClick={() => setPrintKey((k) => k + 1)}
               aria-label="Print the sample strip again"
-              className="relative -mt-2 block w-full cursor-pointer overflow-hidden rounded-b-2xl pb-3 pt-3"
-              style={{ height: 'min(66vw, 24rem)' }}
+              className="relative -mt-2 block w-full cursor-pointer pt-3"
+              style={{ height: '17rem', clipPath: 'inset(0 -2rem -20rem -2rem)' }}
             >
               <div key={printKey} className={reduce ? '' : 'printing'}>
                 <div className={reduce ? '' : 'sway'} style={{ height: '100%' }}>
-                  <FilmCanvas doc={heroDoc} width={150} label="Sample film strip with four photos" className="mx-auto" />
+                  <FilmCanvas doc={heroDoc} width={120} label="Sample film strip with four photos" className="mx-auto" />
                 </div>
               </div>
             </button>
@@ -176,9 +176,9 @@ export function Home({ onStart }: Props) {
                   onClick={() => onStart({ format: l.format, frames: l.frames, filterId: l.filter })}
                   tabIndex={i >= LOOKS.length ? -1 : 0}
                   aria-label={`Start with ${l.name}`}
-                  className="group flex h-[17rem] w-[11rem] flex-col items-center justify-center rounded-[1.6rem] border-[2.5px] border-line bg-surface p-3 shadow-[0_5px_0_var(--shadow)] transition-transform hover:-translate-y-1.5 hover:rotate-1 active:translate-y-0.5"
+                  className="group flex h-[16rem] w-[11rem] flex-col items-center justify-center rounded-[1.6rem] border-[2.5px] border-line bg-surface p-3 shadow-[0_5px_0_var(--shadow)] transition-transform hover:-translate-y-1.5 hover:rotate-1 active:translate-y-0.5"
                 >
-                  <FilmCanvas doc={previewDoc(l.format, l.frames, l.filter, l.offset)} width={l.format === 'film35' ? 74 : l.format === 'instant' ? 108 : 70} label={l.name} />
+                  <FilmCanvas doc={previewDoc(l.format, l.frames, l.filter, l.offset)} width={l.format === 'film35' ? 58 : l.format === 'instant' ? 100 : 54} label={l.name} />
                   <span className="mt-2 inline-flex items-center gap-1 text-sm font-extrabold">
                     <Sparkles size={14} aria-hidden /> {l.name.split(' ')[0]}
                   </span>

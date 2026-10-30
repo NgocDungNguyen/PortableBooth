@@ -130,7 +130,7 @@ export function FramePanel() {
   const { doc, apply } = useStudio();
   return (
     <div className="flex flex-col gap-4">
-      <div role="radiogroup" aria-label="Film color" className="flex flex-wrap gap-2.5">
+      <div role="radiogroup" aria-label="Film color" className="flex flex-wrap gap-3 p-2">
         {FRAME_COLORS.map((c) => (
           <motion.button
             key={c}
@@ -221,7 +221,7 @@ export function TextPanel() {
     const l = computeLayout(doc.format, doc.frames, doc.corners);
     const target = l.caption ?? l.slots[0];
     const x = target.x + target.w / 2;
-    const y = l.caption ? target.y + target.h / 2 : target.y + target.h - 5;
+    const y = l.caption ? target.y + (target.h - 6) / 2 : target.y + target.h - 5;
     apply((d) => ({
       ...d,
       items: [...d.items, { id, kind: 'text', text, font: 'marker', color: inkOn(d.frameColor), x, y, size: 5.5, rot: -3 }],
@@ -269,7 +269,7 @@ export function TextPanel() {
               </button>
             ))}
           </div>
-          <div role="radiogroup" aria-label="Text color" className="flex flex-wrap gap-2.5">
+          <div role="radiogroup" aria-label="Text color" className="flex flex-wrap gap-3 p-2">
             {TEXT_COLORS.map((c) => (
               <button
                 key={c}

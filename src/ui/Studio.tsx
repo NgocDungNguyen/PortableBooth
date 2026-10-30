@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ArrowLeft, ArrowRight, Camera, Check, Download, Home, Redo2, Rows3, ShieldX, Undo2, Wand2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Camera, Check, Download, Home, Rows3, ShieldX, Wand2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { filledCount, isComplete } from '../film/doc';
 import { useStudio, type Step } from '../state/studio';
@@ -17,7 +17,7 @@ const META = [
 ] as const;
 
 export default function Studio() {
-  const { doc, step, setStep, undo, redo, canUndo, canRedo, clearAll } = useStudio();
+  const { doc, step, setStep, clearAll } = useStudio();
   const reduce = useReducedMotion();
   const [confirm, setConfirm] = useState(false);
   const complete = isComplete(doc);
@@ -67,16 +67,6 @@ export default function Studio() {
           </ol>
         </nav>
         <div className="flex items-center gap-2">
-          {step === 2 && (
-            <>
-              <button className="btn btn-icon btn-sm" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo">
-                <Undo2 size={22} aria-hidden />
-              </button>
-              <button className="btn btn-icon btn-sm" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo">
-                <Redo2 size={22} aria-hidden />
-              </button>
-            </>
-          )}
           <button className="btn btn-icon btn-sm" onClick={() => setConfirm(true)} aria-label="Clear everything" title="Clear everything">
             <ShieldX size={22} aria-hidden />
           </button>

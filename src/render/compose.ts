@@ -242,7 +242,7 @@ export function renderFilm(target: HTMLCanvasElement, doc: FilmDoc, opts: Render
     ctx.textAlign = doc.format === 'strip' ? 'center' : 'right';
     const bx = doc.format === 'strip' ? (c.x + c.w / 2) * ppm : (c.x + c.w) * ppm;
     ctx.globalAlpha = 0.85;
-    ctx.fillText(BRAND, bx, (c.y + c.h / 2) * ppm);
+    ctx.fillText(BRAND, bx, (c.y + c.h - 3.4) * ppm);
   }
   if (doc.format === 'film35') {
     ctx.fillStyle = '#FFA726';

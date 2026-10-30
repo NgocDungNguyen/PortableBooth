@@ -43,8 +43,8 @@ export function StepExport() {
   };
 
   return (
-    <div className="grid flex-1 items-center gap-6 md:grid-cols-[1fr_22rem]">
-      <div className="relative min-h-[48dvh] md:min-h-[64dvh]">
+    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] items-center gap-5 md:grid-cols-[minmax(0,1fr)_22rem] md:gap-6">
+      <div className="relative h-[44dvh] min-w-0 md:h-[64dvh]">
         <motion.div
           className="h-full"
           initial={reduce ? false : { y: -80, opacity: 0, rotate: -3 }}

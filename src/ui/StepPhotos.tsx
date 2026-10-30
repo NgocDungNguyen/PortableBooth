@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { Camera, ImagePlus, RefreshCw, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { emptySlots, isComplete, setSlotPhoto } from '../film/doc';
+import { emptySlots, setSlotPhoto } from '../film/doc';
 import { computeLayout } from '../film/layout';
 import { importFile, ImportFailure, importMessage } from '../media/import';
 import { useStudio } from '../state/studio';
@@ -9,13 +9,13 @@ import { CameraView } from './CameraView';
 import { FilmCanvas } from './FilmCanvas';
 
 export function StepPhotos() {
-  const { doc, apply, targetSlot, setTargetSlot, toast, setStep } = useStudio();
+  const { doc, apply, targetSlot, setTargetSlot, toast } = useStudio();
   const [camera, setCamera] = useState(false);
   const [drag, setDrag] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const layout = computeLayout(doc.format, doc.frames, doc.corners);
-  const complete = isComplete(doc);
-  const queue = targetSlot !== null ? [targetSlot] : emptySlots(doc);
+  const empties = emptySlots(doc);
+  const queue = targetSlot !== null ? [targetSlot] : empties.length ? empties : doc.slots.map((_, i) => i);
 
   const addFiles = useCallback(
     async (files: File[]) => {
@@ -64,7 +64,7 @@ export function StepPhotos() {
 
   return (
     <div
-      className="grid flex-1 gap-5 md:grid-cols-[1fr_22rem] md:items-center"
+      className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1fr)_22rem] md:items-center md:gap-5"
       onDragOver={(e) => {
         e.preventDefault();
         setDrag(true);
@@ -76,7 +76,7 @@ export function StepPhotos() {
         void addFiles([...e.dataTransfer.files]);
       }}
     >
-      <div className="relative min-h-[46dvh] md:min-h-[60dvh]">
+      <div className="relative min-h-[36dvh] min-w-0 md:min-h-[60dvh]">
         <FilmCanvas doc={doc} showEmpty label={`Your film with ${doc.slots.length} photo slots`}>
           {(pxPerMm) =>
             layout.slots.map((s, i) => {
@@ -103,23 +103,22 @@ export function StepPhotos() {
         </FilmCanvas>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-1 md:gap-4">
         <motion.button
           whileTap={{ scale: 0.96 }}
           whileHover={{ y: -3 }}
           onClick={() => setCamera(true)}
-          disabled={!queue.length}
-          className="btn btn-lg btn-primary h-28 w-full flex-col gap-1 text-2xl"
+          className="btn btn-lg btn-primary h-24 w-full flex-col gap-1 text-2xl md:h-28"
         >
-          <Camera size={38} aria-hidden /> Camera
+          <Camera size={34} aria-hidden /> Camera
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.96 }}
           whileHover={{ y: -3 }}
           onClick={() => input.current?.click()}
-          className="btn btn-lg h-28 w-full flex-col gap-1 text-2xl"
+          className="btn btn-lg h-24 w-full flex-col gap-1 text-2xl md:h-28"
         >
-          <Upload size={38} aria-hidden /> Upload
+          <Upload size={34} aria-hidden /> Upload
         </motion.button>
         <input
           ref={input}
@@ -133,11 +132,6 @@ export function StepPhotos() {
             e.target.value = '';
           }}
         />
-        {complete && (
-          <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onClick={() => setStep(2)} className="btn btn-primary btn-lg pulse">
-            Style it
-          </motion.button>
-        )}
       </div>
 
       {drag && (
