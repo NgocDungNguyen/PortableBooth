@@ -1,0 +1,10 @@
+// Cloudflare Workers static assets: `npm run build` makes dist/, `npx wrangler deploy` publishes it.
+// No Worker script runs: it is a pure static site, and dist/_headers (from public/_headers) sets the security headers.
+{
+  "name": "portablebooth",
+  "compatibility_date": "2026-10-30",
+  "assets": {
+    "directory": "./dist"
+  },
+  "observability": { "enabled": false }
+}
