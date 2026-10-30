@@ -74,13 +74,13 @@ const CLIPS = {
     await sleep(800);
     await s.start();
     await sleep(500);
-    const filt = (n) => p.getByRole('radiogroup', { name: 'Filter' }).getByRole('radio').nth(n);
+    const filt = (n) => p.getByRole('radiogroup', { name: 'Filter', exact: true }).getByRole('radio').nth(n);
     s.mark('looks');
     for (const [i, n] of [[1, 2], [2, 4], [3, 6], [4, 7]]) { await s.tap(filt(n), { mark: `look${i}`, ms: 380 }); await sleep(650); }
     await s.tap(tab(p, 'Frame'), { mark: 'frame' }); await sleep(500);
     const style = (n) => p.getByRole('radiogroup', { name: 'Frame style' }).getByRole('radio').nth(n);
-    await s.tap(style(2), { mark: 'frame1', ms: 380 }); await sleep(650);
-    await s.tap(style(5), { mark: 'frame2', ms: 380 }); await sleep(650);
+    await s.tap(style(7), { mark: 'frame1', ms: 380 }); await sleep(650);
+    await s.tap(style(3), { mark: 'frame2', ms: 380 }); await sleep(650);
     const sw = (n) => p.getByRole('radiogroup', { name: 'Film colour' }).getByRole('radio').nth(n);
     await s.tap(sw(4), { mark: 'colour1', ms: 380 }); await sleep(600);
     await s.tap(sw(7), { mark: 'colour2', ms: 380 }); await sleep(600);
@@ -96,9 +96,9 @@ const CLIPS = {
       return { cx: (a.x + d.x + d.width) / 2, cy: (a.y + d.y + d.height) / 2, br: { x: d.x + d.width / 2, y: d.y + d.height / 2 } };
     };
     let b = await box();
-    await s.drag({ x: b.cx, y: b.cy }, { x: b.cx + 70, y: b.cy - 120 }, { mark: 'drag', ms: 800 }); await sleep(500);
+    await s.drag({ x: b.cx, y: b.cy }, { x: b.cx + 70, y: b.cy - 120 }, { mark: 'drag' }); await sleep(500);
     b = await box();
-    await s.drag(b.br, { x: b.br.x + 45, y: b.br.y + 45 }, { mark: 'resize', ms: 700 }); await sleep(600);
+    await s.drag(b.br, { x: b.br.x + 45, y: b.br.y + 45 }, { mark: 'resize' }); await sleep(600);
     await s.tap(tab(p, 'Text'), { mark: 'text' }); await sleep(500);
     await s.tap(p.getByRole('textbox', { name: 'Text' }), { ms: 380 });
     s.mark('type');
@@ -106,15 +106,15 @@ const CLIPS = {
     await s.tap(p.getByRole('button', { name: 'Add text', exact: true }), { mark: 'textadd', ms: 300 }); await sleep(900);
     await s.tap(tab(p, 'Add'), { ms: 380 }); await sleep(500);
     await s.tap(p.getByRole('radio', { name: 'Widgets' }), { ms: 380 }); await sleep(700);
-    await s.tap(p.locator('button[aria-label^="Add "].tile').nth(0), { mark: 'widget', ms: 380 }); await sleep(1100);
+    await s.tap(p.getByRole('button', { name: 'Add Ticket' }), { mark: 'widget', ms: 380 }); await s.paint(); await sleep(1500);
     // crop: select a photo, zoom in; tint: give it its own filter
     await s.tap(tab(p, 'Photos'), { ms: 380 }); await sleep(400);
     await s.tap(p.getByRole('radio', { name: /^Photo 2/ }), { mark: 'slot', ms: 380 }); await sleep(700);
     const zoom = p.getByRole('slider', { name: 'Zoom' });
     const zb = (await s.center(zoom)).b;
-    await s.drag({ x: zb.x + 4, y: zb.y + zb.height / 2 }, { x: zb.x + zb.width * 0.55, y: zb.y + zb.height / 2 }, { mark: 'crop', ms: 700 }); await sleep(600);
+    await s.drag({ x: zb.x + 4, y: zb.y + zb.height / 2 }, { x: zb.x + zb.width * 0.85, y: zb.y + zb.height / 2 }, { mark: 'crop', steps: 12 }); await sleep(600);
     await s.tap(p.getByRole('button', { name: 'Choose filter' }), { ms: 380 }); await sleep(700);
-    const ft = (n) => p.getByRole('radiogroup', { name: 'Filter' }).getByRole('radio').nth(n);
+    const ft = (n) => p.getByRole('radiogroup', { name: 'Filter', exact: true }).getByRole('radio').nth(n);
     await s.tap(ft(5), { mark: 'tint', ms: 380 }); await sleep(700);
     await s.tap(ft(1), { mark: 'tint2', ms: 380 }); await sleep(900);
     s.mark('end');
@@ -131,7 +131,7 @@ const CLIPS = {
     await sleep(800);
     await s.start();
     await sleep(400);
-    const filt = (n) => p.getByRole('radiogroup', { name: 'Filter' }).getByRole('radio').nth(n);
+    const filt = (n) => p.getByRole('radiogroup', { name: 'Filter', exact: true }).getByRole('radio').nth(n);
     for (const [i, n] of [[1, 2], [2, 5], [3, 10]]) { await s.tap(filt(n), { mark: `look${i}`, ms: 380 }); await sleep(700); }
     await s.tap(tab(p, 'Frame'), { mark: 'frame', ms: 380 }); await sleep(500);
     const style = (n) => p.getByRole('radiogroup', { name: 'Frame style' }).getByRole('radio').nth(n);
@@ -149,7 +149,7 @@ const CLIPS = {
     const p = s.page;
     await fill(s, 4, 0);
     await tab(p, 'Looks').click(); await sleep(300);
-    await p.getByRole('radiogroup', { name: 'Filter' }).getByRole('radio').nth(3).click(); await sleep(600);
+    await p.getByRole('radiogroup', { name: 'Filter', exact: true }).getByRole('radio').nth(3).click(); await sleep(600);
     await s.start();
     await sleep(400);
     await s.tap(p.getByRole('button', { name: 'Export', exact: true }), { mark: 'export' });

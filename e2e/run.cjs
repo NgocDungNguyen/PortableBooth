@@ -227,14 +227,28 @@ const panel = (page) => page.locator('#tool-body');
   await page.screenshot({ path: `${SHOTS}/14-studio-final.png` });
 
   // ---- theme toggle (light <-> dark, in memory only)
+  await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('radio', { name: 'Light theme' }).click();
-  ok((await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'light', 'theme: light can be chosen');
+  ok((await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'light', 'theme: light can be chosen in Settings');
+  await page.screenshot({ path: `${SHOTS}/14a-settings.png` });
+  await axe(page, 'settings (light theme)');
+  const music = page.getByRole('switch', { name: 'Background music' });
+  if (await music.count()) {
+    const before = await music.getAttribute('aria-checked');
+    await music.click();
+    ok((await music.getAttribute('aria-checked')) !== before, 'settings: background music can be switched on/off');
+    await music.click();
+  }
+  await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${SHOTS}/14b-light-studio.png` });
   await axe(page, 'studio (light theme)');
+  await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('radio', { name: 'Dark theme' }).click();
   ok((await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === 'dark', 'theme: dark can be chosen');
   await page.getByRole('radio', { name: 'Auto theme' }).click();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
 
   // ---- horizontal ("Share (wide)") film keeps photos and elements
   await page.getByRole('tab', { name: 'Film' }).click();
@@ -306,10 +320,12 @@ const panel = (page) => page.locator('#tool-body');
   ok(await mp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'mobile studio: no horizontal scroll');
   const eb = await mp.getByRole('button', { name: /^Export/ }).boundingBox();
   ok(eb && eb.x >= 0 && eb.x + eb.width <= 390 - 8, `mobile studio: Export button fits the header (right edge ${eb ? Math.round(eb.x + eb.width) : '?'} of 390)`);
-  await mp.getByRole('button', { name: 'More' }).tap();
-  ok((await mp.getByRole('radio', { name: 'Dark theme' }).count()) === 1, 'mobile studio: theme switch lives in the More menu');
-  await mp.screenshot({ path: `${SHOTS}/m3b-more-menu.png` });
+  await mp.getByRole('button', { name: 'Settings' }).tap();
+  ok((await mp.getByRole('radio', { name: 'Dark theme' }).count()) === 1, 'mobile studio: theme switch lives in Settings');
+  ok((await mp.getByRole('button', { name: 'Clear everything' }).count()) === 1, 'mobile studio: Clear everything is reachable in Settings');
+  await mp.screenshot({ path: `${SHOTS}/m3b-settings.png` });
   await mp.keyboard.press('Escape');
+  await mp.waitForTimeout(300);
   await mp.getByRole('button', { name: 'Done editing' }).tap();
   await mp.getByRole('tab', { name: 'Frame' }).tap();
   await mp.waitForTimeout(400);
@@ -347,6 +363,22 @@ const panel = (page) => page.locator('#tool-body');
   await sp.screenshot({ path: `${SHOTS}/16-strict-csp.png` });
   ok(cspHits.length === 0, `strict CSP: app (incl. lazy icon packs) works with the policy enforced ${cspHits.slice(0, 2).join(' | ')}`);
   ok((await sp.evaluate(() => document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || '')).includes("default-src 'none'"), 'strict CSP: policy present in HTML');
+
+  // ---- About page, shared look links, music files (all under the strict CSP)
+  await sp.goto('about:blank');
+  await sp.goto(BASE + '/#about', { waitUntil: 'networkidle' });
+  await sp.waitForSelector('text=/June Nguyen/', { timeout: 5000 }).catch(() => {});
+  ok((await sp.getByText(/June Nguyen/).count()) > 0 && (await sp.getByText(/RMIT/).count()) > 0, 'about: credits June Nguyen / RMIT');
+  ok((await sp.locator('[role=dialog][aria-label="How PortableBooth works"]').count()) === 0, 'about: no intro on a deep link');
+  await sp.goto('about:blank');
+  await sp.goto(BASE + '/#look=film35.landscape.3.noir.plain', { waitUntil: 'networkidle' });
+  await sp.waitForSelector('[role=tablist][aria-label=Tools]');
+  ok((await sp.getByRole('radio', { name: /35mm/ }).getAttribute('aria-checked')) === 'true' && (await sp.getByRole('radio', { name: /Share \(wide\)/ }).getAttribute('aria-checked')) === 'true', 'share: a look link opens the studio with that film');
+  const audioOk = await sp.evaluate(async () => {
+    const urls = [...document.querySelectorAll('audio')].map((a) => a.currentSrc || a.src).filter(Boolean);
+    return urls.length;
+  });
+  ok(cspHits.length === 0, `strict CSP: about, look links and music raise no violations ${cspHits.slice(0, 2).join(' | ')} (${audioOk} audio decks)`);
   await strict.close();
 
   await browser.close();

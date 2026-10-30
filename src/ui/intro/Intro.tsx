@@ -28,8 +28,8 @@ const SCENES: SceneMeta[] = [
   { words: ['Save.', 'Print.', 'Share.'], em: 2, line: '300 DPI prints, or send it anywhere.', desc: 'Export a 300 DPI PNG to print, or share it with nearby devices, messages, mail or a QR code.' },
 ];
 const COUNT = SCENES.length;
-/** poses for reduced motion (static cards): late in each scene, when everything has landed */
-const STILL_AT = [7400, 7400, 7400, 7400, 7400];
+/** poses for reduced motion (static cards): when everything has landed, before the scene fades out */
+const STILL_AT = [5200, 7100, 7100, 7100, 7100];
 
 function Segment({ time, i }: { time: MotionValue<number>; i: number }) {
   const scaleX = useTransform(time, (v) => clamp01((v - i * SCENE_MS) / SCENE_MS));
@@ -137,6 +137,7 @@ export function Intro({ onDone }: { onDone: () => void }) {
   const skip = useRef<HTMLButtonElement>(null);
   const down = useRef<{ x: number; y: number; at: number } | null>(null);
   const closed = useRef(false);
+  const hintShown = useRef(false);
   const latest = useRef({ reel, onDone, tapped, sound });
   latest.current = { reel, onDone, tapped, sound };
 
@@ -191,16 +192,12 @@ export function Intro({ onDone }: { onDone: () => void }) {
   }, [finish, goTo]);
   const goPrev = useCallback(() => goTo(() => latest.current.reel.prev()), [goTo]);
 
-  /** the first touch turns the sound on: restart the current scene so picture and music start together */
+  /** the first touch (while "Tap for sound" shows) only turns the sound on; it does not skip ahead */
   const firstTouch = useCallback(() => {
-    const { tapped: t, sound: s, reel: r } = latest.current;
-    audio.unlock();
-    if (t) return false;
+    if (latest.current.tapped) return false;
     setTapped(true);
-    if (!s.enabled || s.unlocked) return false;
-    r.seek(r.current());
-    audio.introScene(r.current());
-    return true;
+    // the score follows the reel clock by itself once unlocked, so this tap only turns the sound on
+    return hintShown.current && audio.getState().enabled;
   }, []);
 
   useEffect(() => {
@@ -280,6 +277,8 @@ export function Intro({ onDone }: { onDone: () => void }) {
   const stageOpacity = useTransform(exit, (v) => (last ? 1 : 1 - v));
   const m = SCENES[scene];
   const soundHint = ok && !tapped && sound.enabled && !sound.unlocked;
+  // remembered, because the tap that answers the hint unlocks audio (App's global listener) before it reaches us
+  if (soundHint) hintShown.current = true;
 
   return (
     <motion.div

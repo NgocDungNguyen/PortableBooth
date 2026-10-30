@@ -1,0 +1,35 @@
+{
+  "name": "portablebooth-ad-video",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PortableBooth social ad (Remotion). Separate from the app.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "align": "python3 tools/align.py public/audio/vo.mp3",
+    "capture": "node capture/all.cjs",
+    "music": "python3 audio/compose.py",
+    "render": "node tools/render.mjs",
+    "build": "node tools/build.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
+    "@remotion/bundler": "^4.0.539",
+    "@remotion/cli": "^4.0.539",
+    "@remotion/fonts": "^4.0.539",
+    "@remotion/media": "^4.0.539",
+    "@remotion/renderer": "^4.0.539",
+    "qrcode-generator": "^2.0.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

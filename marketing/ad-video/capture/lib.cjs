@@ -98,28 +98,31 @@ async function session(name, device, { colorScheme = 'light', url = '/#studio' }
       events.push({ t: now() - t0, type: 'up', x: c.x, y: c.y });
       return c;
     },
-    async drag(from, to, { ms = 900, mark } = {}) {
+    /** drag in small steps, waiting for the app to paint each one (the edit time-remaps the segment to a natural speed) */
+    async drag(from, to, { steps = 16, mark } = {}) {
       await s.moveTo(from.x, from.y, 380);
       if (mark) s.mark(mark);
       events.push({ t: now() - t0, type: 'down', x: from.x, y: from.y });
       await page.mouse.move(from.x, from.y);
       await page.mouse.down();
-      await sleep(120);
-      const steps = Math.round(ms / 16);
-      const tStart = now();
+      await s.paint();
       for (let i = 1; i <= steps; i++) {
         const k = ease(i / steps);
         const x = from.x + (to.x - from.x) * k;
         const y = from.y + (to.y - from.y) * k;
-        events.push({ t: now() - t0, type: 'drag', x, y });
         await page.mouse.move(x, y);
-        const d = tStart + (ms / 1000) * (i / steps) - now();
-        if (d > 0) await sleep(d * 1000);
+        events.push({ t: now() - t0, type: 'drag', x, y });
+        await s.paint();
       }
-      await sleep(80);
       await page.mouse.up();
       events.push({ t: now() - t0, type: 'up', x: to.x, y: to.y });
+      await s.paint();
+      if (mark) s.mark(mark + 'End');
       pos = { ...to };
+    },
+    /** wait until the page has painted twice */
+    async paint() {
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
     },
     async type(loc, text, { cps = 11 } = {}) {
       await loc.click();

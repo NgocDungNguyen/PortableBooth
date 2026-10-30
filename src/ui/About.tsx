@@ -17,6 +17,7 @@ const CREDITS: { what: string; who: string; licence: string }[] = [
   { what: 'Interface icons', who: 'Lucide', licence: 'ISC' },
   { what: 'Music', who: 'Original tracks composed and generated in code for PortableBooth', licence: 'Original' },
   { what: 'QR codes', who: 'qrcode-generator by Kazuhiko Arase', licence: 'MIT' },
+  { what: 'QR scanner', who: 'jsQR by Cosmo Wolfe', licence: 'Apache-2.0' },
   { what: 'Built with', who: 'React, Motion, Tailwind CSS and Vite', licence: 'MIT' },
 ];
 
