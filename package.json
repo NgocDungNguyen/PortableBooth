@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:preview": "vite build --config vite.preview.config.ts",
+    "build:preview": "vite build --config vite.preview.config.ts && node scripts/make-artifact.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "e2e": "node e2e/run.cjs"
