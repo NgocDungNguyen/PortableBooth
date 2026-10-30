@@ -1,41 +1,117 @@
-import { Download, Loader2, Lock, Printer, Share2, Smartphone, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Copy, Download, Loader2, Lock, Printer, Radio, Share, Smartphone, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { computeLayout } from '../film/layout';
-import { downloadBlob, exportFilm, shareBlob, type ExportKind } from '../media/export';
+import type { FilmDoc } from '../film/types';
+import { downloadBlob, exportFilm, shareBlob, type ExportKind, type ExportResult } from '../media/export';
+import { canCopyImage, canShareFiles, copyImage } from '../media/share';
 import { PPM_300DPI } from '../render/compose';
 import { useStudio } from '../state/studio';
 import { FilmCanvas } from './FilmCanvas';
 import { Seg } from './panels/common';
+import { QrPanel, type QrMode } from './share/QrPanel';
+import { SendNearby } from './share/SendNearby';
+
+function ActionCard({ icon, title, sub, onClick, busy, disabled, btnRef }: { icon: ReactNode; title: string; sub: string; onClick: () => void; busy?: boolean; disabled?: boolean; btnRef?: RefObject<HTMLButtonElement | null> }) {
+  return (
+    <button ref={btnRef} className="btn h-auto min-h-16 w-full justify-start gap-3 px-3 py-2.5 text-left" onClick={onClick} disabled={disabled}>
+      <span className="feature-icon shrink-0" aria-hidden>{busy ? <Loader2 className="animate-spin" size={20} /> : icon}</span>
+      <span className="flex min-w-0 flex-col">
+        <span className="text-[0.95rem] font-semibold">{title}</span>
+        <span className="text-xs font-normal text-muted">{sub}</span>
+      </span>
+    </button>
+  );
+}
 
 export function ExportDialog() {
   const { doc, exportOpen, setExportOpen, toast } = useStudio();
   const ref = useRef<HTMLDialogElement>(null);
+  const sendRef = useRef<HTMLButtonElement>(null);
+  const qrHeading = useRef<HTMLHeadingElement>(null);
   const [kind, setKind] = useState<ExportKind>('share');
-  const [busy, setBusy] = useState<'save' | 'share' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'share' | 'copy' | null>(null);
+  const [beamOpen, setBeamOpen] = useState(false);
+  const [qrMode, setQrMode] = useState<QrMode>('app');
+  const [note, setNote] = useState('');
+  const shareOk = useMemo(canShareFiles, []);
+  const copyOk = useMemo(canCopyImage, []);
   const l = computeLayout(doc.format, doc.frames, doc.corners, doc.orientation);
   const wide = doc.orientation === 'landscape';
   const ppm = kind === 'print' ? PPM_300DPI : 1800 / Math.max(l.widthMm, l.heightMm);
 
+  // Render once per (doc, size) and reuse it for Save / Share / Copy / Send, so the share sheet opens straight from the tap.
+  const cache = useRef<{ doc: FilmDoc; kind: ExportKind; p: Promise<ExportResult> } | null>(null);
+  const getOut = useCallback((k: ExportKind): Promise<ExportResult> => {
+    const c = cache.current;
+    if (c && c.doc === doc && c.kind === k) return c.p;
+    const p = exportFilm(doc, k);
+    cache.current = { doc, kind: k, p };
+    p.catch(() => cache.current?.p === p && (cache.current = null));
+    return p;
+  }, [doc]);
+  const getFile = useCallback(() => getOut(kind), [getOut, kind]);
+
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (exportOpen && !d.open) d.showModal();
+    if (exportOpen && !d.open) {
+      d.showModal();
+      sendRef.current?.focus();
+    }
     if (!exportOpen && d.open) d.close();
+    if (!exportOpen) {
+      cache.current = null;
+      setNote('');
+      setBeamOpen(false);
+    }
   }, [exportOpen]);
 
-  const run = async (mode: 'save' | 'share') => {
-    setBusy(mode);
+  useEffect(() => {
+    if (!exportOpen) return;
+    const t = setTimeout(() => getOut(kind).catch(() => {}), 250);
+    return () => clearTimeout(t);
+  }, [exportOpen, kind, getOut]);
+
+  const save = async () => {
+    setBusy('save');
     try {
-      const out = await exportFilm(doc, kind);
-      if (mode === 'share') {
-        const r = await shareBlob(out);
-        if (r === 'unsupported') {
-          await downloadBlob(out);
-          toast('Saved to your device');
-        }
-      } else await downloadBlob(out);
+      await downloadBlob(await getOut(kind));
     } catch {
       toast("Couldn't save. Try again");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const share = async () => {
+    setBusy('share');
+    setNote('');
+    try {
+      const out = await getOut(kind);
+      const r = shareOk ? await shareBlob(out, 'Made with PortableBooth') : 'unsupported';
+      if (r === 'unsupported' || r === 'failed') {
+        await downloadBlob(out);
+        setQrMode('app');
+        setNote('No share sheet in this browser, so we saved the photo. Use Send to a nearby phone, or let them scan the code below to make their own.');
+        requestAnimationFrame(() => {
+          qrHeading.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+      }
+    } catch {
+      toast("Couldn't share. Try Save to device");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const copy = async () => {
+    setBusy('copy');
+    try {
+      await copyImage(getOut(kind).then((o) => o.blob));
+      toast('Image copied');
+    } catch {
+      toast("Couldn't copy. Try Save to device");
     } finally {
       setBusy(null);
     }
@@ -47,32 +123,48 @@ export function ExportDialog() {
       onClose={() => setExportOpen(false)}
       onClick={(e) => e.target === ref.current && setExportOpen(false)}
       aria-labelledby="export-title"
-      className="m-auto w-[min(94vw,56rem)] overflow-hidden rounded-2xl border border-line2 bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+      className="mx-auto mb-0 mt-auto max-h-[94dvh] w-full max-w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-line2 bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/70 backdrop:backdrop-blur-sm md:m-auto md:max-h-[92dvh] md:w-[min(94vw,60rem)] md:overflow-hidden md:rounded-2xl"
     >
-      <div className="grid md:grid-cols-[1fr_20rem]">
-        <div className="stage-bg grid h-[44dvh] place-items-center p-6 md:h-[70dvh]">
+      <div className="grid md:h-[min(46rem,92dvh)] md:grid-cols-[1fr_23rem]">
+        <div className="stage-bg grid h-[30dvh] place-items-center p-4 md:h-full md:p-6">
           {exportOpen && <FilmCanvas doc={doc} label="Your finished film" />}
         </div>
-        <div className="flex flex-col gap-4 p-5">
+        <div className="flex flex-col gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:overflow-y-auto">
           <div className="flex items-center justify-between">
-            <h2 id="export-title" className="text-xl font-semibold">Export</h2>
+            <h2 id="export-title" className="text-xl font-semibold">Save &amp; share</h2>
             <button className="btn btn-icon btn-ghost" onClick={() => setExportOpen(false)} aria-label="Close"><X size={20} aria-hidden /></button>
           </div>
-          <Seg label="Size" value={kind} onChange={setKind} options={wide
-            ? [{ id: 'share', label: 'Share (JPEG)' }, { id: 'print', label: 'PNG (lossless)' }]
-            : [{ id: 'share', label: 'Share', icon: <Smartphone size={16} aria-hidden /> }, { id: 'print', label: 'Print', icon: <Printer size={16} aria-hidden /> }]} />
-          <p className="num text-sm text-muted" aria-live="polite">
-            {Math.round(l.widthMm * ppm)} × {Math.round(l.heightMm * ppm)} px{kind === 'print' ? (wide ? ' · PNG' : ' · 300 DPI · PNG') : ' · JPEG'}
-          </p>
-          <button className="btn btn-primary btn-lg" onClick={() => run('save')} disabled={!!busy}>
-            {busy === 'save' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Download size={20} aria-hidden />} Save
-          </button>
-          <button className="btn btn-lg" onClick={() => run('share')} disabled={!!busy}>
-            {busy === 'share' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Share2 size={20} aria-hidden />} Share
-          </button>
+          <div className="flex flex-col gap-1.5">
+            <Seg label="Size" value={kind} onChange={setKind} options={wide
+              ? [{ id: 'share', label: 'Share (JPEG)' }, { id: 'print', label: 'PNG (lossless)' }]
+              : [{ id: 'share', label: 'Share', icon: <Smartphone size={16} aria-hidden /> }, { id: 'print', label: 'Print', icon: <Printer size={16} aria-hidden /> }]} />
+            <p className="num text-xs text-muted" aria-live="polite">
+              {Math.round(l.widthMm * ppm)} × {Math.round(l.heightMm * ppm)} px{kind === 'print' ? (wide ? ' · PNG' : ' · 300 DPI · PNG') : ' · JPEG'}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <ActionCard btnRef={sendRef} icon={<Radio size={20} />} title="Send to a nearby phone" sub="Direct, phone to phone, on the same Wi-Fi" onClick={() => setBeamOpen(true)} disabled={!!busy} />
+            <ActionCard icon={<Share size={20} />} title="Share to nearby devices / apps" sub={shareOk ? 'AirDrop, Quick Share, Nearby Sharing and your apps' : 'No share sheet here: saves the photo instead'} onClick={share} busy={busy === 'share'} disabled={!!busy} />
+            <div className={`grid gap-2 ${copyOk ? 'grid-cols-2' : ''}`}>
+              <button className="btn btn-primary btn-lg" onClick={save} disabled={!!busy}>
+                {busy === 'save' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Download size={20} aria-hidden />} Save to device
+              </button>
+              {copyOk && (
+                <button className="btn btn-lg" onClick={copy} disabled={!!busy}>
+                  {busy === 'copy' ? <Loader2 className="animate-spin" size={20} aria-hidden /> : <Copy size={20} aria-hidden />} Copy image
+                </button>
+              )}
+            </div>
+            {note && <p role="status" className="rounded-lg bg-surface2 p-2.5 text-sm">{note}</p>}
+          </div>
+
+          <QrPanel doc={doc} mode={qrMode} onMode={setQrMode} headingRef={qrHeading} />
+
           <p className="mt-auto flex items-center gap-2 text-xs text-muted"><Lock size={14} aria-hidden /> Made on your device. Nothing is uploaded.</p>
         </div>
       </div>
+      {exportOpen && createPortal(<SendNearby open={beamOpen} onClose={() => (setBeamOpen(false), requestAnimationFrame(() => sendRef.current?.focus()))} getFile={getFile} />, document.body)}
     </dialog>
   );
 }

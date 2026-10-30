@@ -15,6 +15,8 @@ export interface Reel {
   hold: (on: boolean) => void;
   /** true once the last scene's animation has finished */
   ended: boolean;
+  /** the current scene index, read synchronously (after a seek, before React re-renders) */
+  current: () => number;
 }
 
 interface Opts {
@@ -24,6 +26,8 @@ interface Opts {
   auto: boolean;
   /** local time (ms) at which each scene looks best when shown as a static card */
   stillAt: number[];
+  /** the clock only runs once this is true (the first paint is done) */
+  running?: boolean;
 }
 
 /**
@@ -31,7 +35,7 @@ interface Opts {
  * and seeking (just set the time) are exact. Time is advanced in a single rAF loop and capped per frame so a
  * stalled tab never makes the reel jump.
  */
-export function useReel({ count, sceneMs, auto, stillAt }: Opts): Reel {
+export function useReel({ count, sceneMs, auto, stillAt, running = true }: Opts): Reel {
   const time = useMotionValue(0);
   const local = useMotionValue(0);
   const [scene, setScene] = useState(0);
@@ -77,6 +81,7 @@ export function useReel({ count, sceneMs, auto, stillAt }: Opts): Reel {
     return true;
   }, [count, seek]);
   const prev = useCallback(() => seek(s.current.scene - 1), [seek]);
+  const current = useCallback(() => s.current.scene, []);
   const hold = useCallback((on: boolean) => {
     s.current.holding = on;
   }, []);
@@ -84,7 +89,7 @@ export function useReel({ count, sceneMs, auto, stillAt }: Opts): Reel {
   // the clock
   useEffect(() => {
     apply(s.current.t);
-    if (!auto) return;
+    if (!auto || !running) return;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
@@ -97,7 +102,7 @@ export function useReel({ count, sceneMs, auto, stillAt }: Opts): Reel {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [apply, auto, total]);
+  }, [apply, auto, running, total]);
 
   // pause while the tab is hidden
   useEffect(() => {
@@ -109,5 +114,5 @@ export function useReel({ count, sceneMs, auto, stillAt }: Opts): Reel {
     return () => document.removeEventListener('visibilitychange', on);
   }, []);
 
-  return useMemo(() => ({ time, local, scene, seek, next, prev, hold, ended }), [time, local, scene, seek, next, prev, hold, ended]);
+  return useMemo(() => ({ time, local, scene, seek, next, prev, hold, ended, current }), [time, local, scene, seek, next, prev, hold, ended, current]);
 }
