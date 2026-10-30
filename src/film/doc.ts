@@ -66,14 +66,20 @@ export function createDoc(format: FormatId, frames?: number, orientation: Orient
 }
 
 /** Switch format / frame count (in the doc's orientation), keeping photos that still fit. */
+/** Photos from slots that no longer fit are parked in `spare` so switching back (or to a bigger film) brings them back. */
+function refill(doc: FilmDoc, n: number): { slots: SlotState[]; spare: SlotState[] } {
+  const pool = [...doc.slots, ...(doc.spare ?? [])];
+  return { slots: Array.from({ length: n }, (_, i) => pool[i] ?? emptySlot()), spare: pool.slice(n).filter((x) => x.photoId).slice(0, 8) };
+}
+
 export function reshape(doc: FilmDoc, format: FormatId, frames?: number): FilmDoc {
   const meta = FORMATS[format];
   const o = doc.orientation ?? 'portrait';
   const n = frames && frameOptionsFor(format, o).includes(frames) ? frames : defaultFramesFor(format, o);
-  const slots = Array.from({ length: n }, (_, i) => doc.slots[i] ?? emptySlot());
+  const { slots, spare } = refill(doc, n);
   const formatChanged = format !== doc.format;
   return {
-    ...doc, format, orientation: o, frames: n, slots,
+    ...doc, format, orientation: o, frames: n, slots, spare: spare.length ? spare : undefined,
     frameColor: formatChanged ? meta.defaultColor : doc.frameColor,
     frameStyle: formatChanged ? (format === 'film35' ? 'noise-film' : 'plain') : doc.frameStyle,
     corners: formatChanged ? meta.defaultCorners : doc.corners,
@@ -102,8 +108,8 @@ export function setOrientation(doc: FilmDoc, orientation: Orientation): FilmDoc 
     y: clamp(it.y * ky, 0, b.heightMm),
     size: clamp(it.size * k, 2, 200),
   }));
-  const slots = Array.from({ length: frames }, (_, i) => doc.slots[i] ?? emptySlot());
-  return { ...doc, orientation, frames, slots, items };
+  const { slots, spare } = refill(doc, frames);
+  return { ...doc, orientation, frames, slots, spare: spare.length ? spare : undefined, items };
 }
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -186,6 +192,14 @@ export function sanitizeDoc(d: FilmDoc): FilmDoc {
       .slice(0, MAX_OVERLAYS)
       .map((o) => ({ id: o.id, opacity: clamp(o.opacity, 0, 1) })),
     slots,
+    ...(d.spare?.length
+      ? {
+          spare: d.spare
+            .filter((x) => x && typeof x.photoId === 'string')
+            .slice(0, 8)
+            .map((x) => ({ photoId: x.photoId, zoom: clamp(x.zoom, 1, 3), ox: clamp(x.ox, -1, 1), oy: clamp(x.oy, -1, 1), filterId: typeof x.filterId === 'string' ? filterById(x.filterId).id : null })),
+        }
+      : {}),
     items: (d.items ?? []).slice(0, MAX_ITEMS).map(sanitizeItem).filter((x): x is Item => x !== null),
   };
 }

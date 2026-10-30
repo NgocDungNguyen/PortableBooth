@@ -111,6 +111,8 @@ export interface FilmDoc {
   adjust: AdjustParams;
   overlays: OverlayRef[];
   slots: SlotState[];
+  /** photos parked while a smaller film is selected (restored when the film grows again) */
+  spare?: SlotState[];
   items: Item[];
 }
 

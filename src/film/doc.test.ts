@@ -136,6 +136,16 @@ describe('doc', () => {
     f4.slots = f4.slots.map((s, i) => ({ ...s, photoId: `q${i}` }));
     expect(setOrientation(f4, 'portrait').slots.map((s) => s.photoId)).toEqual(['q0', 'q1', 'q2']);
   });
+  it('parks photos that no longer fit and restores them when the film grows again', () => {
+    const d = createDoc('strip');
+    d.slots.forEach((s, i) => (s.photoId = `p${i}`));
+    const small = reshape(d, 'instant');
+    expect(small.slots.map((s) => s.photoId)).toEqual(['p0']);
+    expect(small.spare?.map((s) => s.photoId)).toEqual(['p1', 'p2', 'p3']);
+    const back = reshape(small, 'strip');
+    expect(back.slots.map((s) => s.photoId)).toEqual(['p0', 'p1', 'p2', 'p3']);
+    expect(sanitizeDoc(small).spare).toHaveLength(3);
+  });
   it('formats the date stamp', () => {
     expect(stampText('2026-10-30')).toBe("30 10 '26");
   });
