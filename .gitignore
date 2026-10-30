@@ -3,3 +3,10 @@ dist
 dist-preview
 *.log
 .DS_Store
+
+# ad video: captures, renders, deps
+marketing/ad-video/public/
+marketing/ad-video/node_modules/
+marketing/ad-video/out/
+marketing/out/*.mp4
+__pycache__/
