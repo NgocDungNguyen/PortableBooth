@@ -102,7 +102,7 @@ export function Craft() {
           <div className="grid w-full grid-cols-3 gap-2">
             {swatches.map((id) => (
               <figure key={id} className="m-0">
-                <div className="h-[5.4rem] overflow-hidden rounded-lg shadow-sm"><FilmCanvas doc={previewDoc('instant', 1, id, 0)} label="" className="mini-thumb-canvas" /></div>
+                <div className="h-[5.4rem] overflow-hidden rounded-lg shadow-sm"><FilmCanvas doc={previewDoc('instant', 1, id, 0)} label={`The same photo in the ${FILTERS.find((f) => f.id === id)?.name} filter`} className="mini-thumb-canvas" /></div>
                 <figcaption className="mt-1 text-center text-[11px] font-semibold text-muted">{FILTERS.find((f) => f.id === id)?.name}</figcaption>
               </figure>
             ))}

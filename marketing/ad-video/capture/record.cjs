@@ -113,11 +113,10 @@ const CLIPS = {
     const zoom = p.getByRole('slider', { name: 'Zoom' });
     const zb = (await s.center(zoom)).b;
     await s.drag({ x: zb.x + 4, y: zb.y + zb.height / 2 }, { x: zb.x + zb.width * 0.55, y: zb.y + zb.height / 2 }, { mark: 'crop', ms: 700 }); await sleep(600);
-    const pf = p.locator('#tool-body').getByRole('radio').filter({ hasNotText: 'zzz' });
-    const filterTiles = p.locator('#tool-body [role="radiogroup"] [role="radio"]');
-    const cnt = await filterTiles.count();
-    await s.tap(filterTiles.nth(Math.min(cnt - 1, 8)), { mark: 'tint', ms: 380 }); await sleep(600);
-    await s.tap(filterTiles.nth(Math.min(cnt - 1, 11)), { mark: 'tint2', ms: 380 }); await sleep(900);
+    await s.tap(p.getByRole('button', { name: 'Choose filter' }), { ms: 380 }); await sleep(700);
+    const ft = (n) => p.getByRole('radiogroup', { name: 'Filter' }).getByRole('radio').nth(n);
+    await s.tap(ft(5), { mark: 'tint', ms: 380 }); await sleep(700);
+    await s.tap(ft(1), { mark: 'tint2', ms: 380 }); await sleep(900);
     s.mark('end');
     return s.stop();
   },
