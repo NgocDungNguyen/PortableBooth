@@ -2,15 +2,17 @@
 //   node tools/render.mjs [9x16|16x9 ...]
 // Output: ../out/PortableBooth-ad-9x16.mp4, -16x9.mp4, -cover-*.png, PortableBooth-ad.srt
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
 
-const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const OUT = path.resolve(root, '..', 'out');
 const TMP = path.join(root, 'out');
-const CHROME = process.env.REMOTION_CHROME || '/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell';
+// unset: Remotion downloads its own headless Chrome on first run
+const CHROME = process.env.REMOTION_CHROME || undefined;
 const chromiumOptions = { gl: 'swangle' };
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(TMP, { recursive: true });

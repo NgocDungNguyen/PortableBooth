@@ -1,7 +1,8 @@
 // Copies the app's own Fontsource fonts (same packages as the app) into public/fonts for the edit.
 import fs from 'node:fs';
 import path from 'node:path';
-const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+import { fileURLToPath } from 'node:url';
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const nm = path.join(root, 'node_modules');
 const out = path.join(root, 'public', 'fonts');
 fs.mkdirSync(out, { recursive: true });

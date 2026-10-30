@@ -108,7 +108,7 @@ export function PrintScene() {
   );
 }
 
-function Qr({ size, text = 'PortableBooth: send to a nearby phone', dark = C.text }: { size: number; text?: string; dark?: string }) {
+function Qr({ size, text = 'PortableBooth: send to a phone', dark = C.text }: { size: number; text?: string; dark?: string }) {
   const cells = useMemo(() => {
     const q = qrcode(0, 'M');
     q.addData(text);
@@ -128,7 +128,7 @@ function Qr({ size, text = 'PortableBooth: send to a nearby phone', dark = C.tex
   );
 }
 
-/** a phone screen in the app's light theme: the "Send to a nearby phone" sheet with the offer QR */
+/** a phone screen in the app's light theme: the "Send to a phone" sheet with its one-scan QR */
 function SendScreen({ t0 }: { t0: number }) {
   const t = useT();
   const k = ramp(t, t0, t0 + 0.4);
@@ -137,17 +137,17 @@ function SendScreen({ t0 }: { t0: number }) {
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.35)' }} />
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 700, borderRadius: '22px 22px 0 0', background: C.paper, padding: 22, translate: `0 ${(1 - k) * 700}px` }}>
         <div style={{ width: 40, height: 5, borderRadius: 9, background: '#cfc9bf', margin: '0 auto 18px' }} />
-        <div style={{ fontFamily: F.ui, fontWeight: 650, fontSize: 21, color: C.text }}>Send to a nearby phone</div>
-        <div style={{ fontFamily: F.ui, fontSize: 14, color: '#6b6777', marginTop: 6 }}>Direct, phone to phone, on the same Wi-Fi</div>
+        <div style={{ fontFamily: F.ui, fontWeight: 650, fontSize: 21, color: C.text }}>Send to a phone</div>
+        <div style={{ fontFamily: F.ui, fontSize: 14, color: '#6b6777', marginTop: 6 }}>They scan a code and get the photo</div>
         <div style={{ marginTop: 28, display: 'grid', placeItems: 'center' }}>
           <div style={{ padding: 14, borderRadius: 20, background: '#fff', boxShadow: '0 8px 30px rgba(20,18,31,.12)' }}>
             <Qr size={250} />
           </div>
         </div>
-        <div style={{ textAlign: 'center', marginTop: 22, fontFamily: F.ui, fontWeight: 600, fontSize: 17, color: C.text }}>Ask them to scan this code</div>
+        <div style={{ textAlign: 'center', marginTop: 22, fontFamily: F.ui, fontWeight: 600, fontSize: 17, color: C.text }}>Scan with your phone camera</div>
         <div style={{ textAlign: 'center', marginTop: 8, fontFamily: F.ui, fontSize: 14, color: '#6b6777' }}>Works with iPhone and Android</div>
-        <div style={{ marginTop: 26, height: 52, borderRadius: 14, background: C.violet, color: '#fff', display: 'grid', placeItems: 'center', fontFamily: F.ui, fontWeight: 650, fontSize: 17 }}>Scan their reply</div>
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8, fontFamily: F.ui, fontSize: 13, color: '#6b6777' }}>🔒 Made on your device. Nothing is uploaded.</div>
+        <div style={{ marginTop: 26, height: 52, borderRadius: 14, background: '#f1ece4', border: '1px solid #d9d2c7', color: C.text, display: 'grid', placeItems: 'center', fontFamily: F.ui, fontWeight: 650, fontSize: 17 }}>Copy link</div>
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8, fontFamily: F.ui, fontSize: 13, color: '#6b6777' }}>🔒 End-to-end encrypted. Nothing is stored.</div>
       </div>
     </div>
   );
@@ -359,9 +359,6 @@ export function End() {
         <div style={{ fontFamily: F.display, fontWeight: 700, fontSize: v ? 58 : 50, color: C.text, letterSpacing: '-0.03em', opacity: ramp(t, go + 0.4, go + 0.9) }}>
           Go make some memories.
         </div>
-      </div>
-      <div style={{ position: 'absolute', left: 0, right: v ? W * 0.12 : 0, bottom: v ? H * 0.205 : H * 0.05, display: 'flex', justifyContent: 'center', opacity: ramp(t, 0.8, 1.3) }}>
-        <span style={{ fontFamily: F.ui, fontWeight: 550, fontSize: v ? 30 : 26, color: '#3d3a48', padding: '10px 24px', borderRadius: 999, background: 'rgba(251,248,243,.92)', boxShadow: '0 6px 20px rgba(20,18,31,.12)' }}>Made by June Nguyen · RMIT Hà Nội</span>
       </div>
       <Sparks at={0.02} x={W / 2} y={v ? H * 0.26 : H * 0.28} spread={v ? 560 : 800} count={30} seed={30} />
       <Flash at={0.02} decay={0.35} max={0.85} />

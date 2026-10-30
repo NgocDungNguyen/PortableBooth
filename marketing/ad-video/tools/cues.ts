@@ -1,10 +1,11 @@
 // Writes audio/cues.json: every timed sound-design event, derived from the edit (scene cuts, taps in the app clips, hits).
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tapsIn } from '../src/clips';
 import { DURATION, HIT, S, SEG, w } from '../src/edit';
 
-const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
+const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const taps = Object.entries(SEG)
   .filter(([k]) => k !== 'sameDesk')
   .flatMap(([, s]) => tapsIn(s));
