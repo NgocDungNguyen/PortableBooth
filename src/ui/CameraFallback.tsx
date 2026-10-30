@@ -75,10 +75,10 @@ export function CameraFallback({ reason, onNative, onUpload, onRetry, onClose }:
       <h2 id="camfb-title" className="mt-3 text-xl font-semibold">{title}</h2>
       <p id="camfb-body" className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
       <div className="mt-5 flex flex-col gap-2">
-        <button ref={primary} className="btn btn-primary btn-lg w-full" onClick={onNative}>
+        <button ref={primary} className="btn btn-primary btn-lg w-full !px-3" onClick={onNative}>
           <Camera size={20} aria-hidden /> Take photo with phone camera
         </button>
-        <button className="btn btn-lg w-full" onClick={onUpload}>
+        <button className="btn btn-lg w-full !px-3" onClick={onUpload}>
           <Upload size={20} aria-hidden /> Upload a photo
         </button>
         {CAN_RETRY.has(reason) && (
