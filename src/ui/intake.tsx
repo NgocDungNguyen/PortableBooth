@@ -49,7 +49,6 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
   const pick = useCallback((slot: number | null = null) => {
     target.current = slot;
     if (input.current) {
-      input.current.multiple = slot === null;
       input.current.click();
     }
   }, []);
@@ -105,6 +104,7 @@ export function IntakeProvider({ children }: { children: ReactNode }) {
       <input
         ref={input}
         type="file"
+        multiple
         accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
         className="hidden"
         aria-label="Choose photos"

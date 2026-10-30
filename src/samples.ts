@@ -10,7 +10,6 @@ type Ctx = CanvasRenderingContext2D;
 
 const rgba = (c: RGB, a = 1) => `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${a})`;
 const mixc = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
 function prng(seed: number) {
   let s = seed | 0;
@@ -523,7 +522,7 @@ function mistyForest(x: Ctx, r: Rnd, w: number, h: number) {
 }
 
 /** top-down summer pool with caustics, a float ring and a sun-warmed deck */
-function poolCaustics(x: Ctx, r: Rnd, w: number, h: number) {
+function poolCaustics(x: Ctx, _r: Rnd, w: number, h: number) {
   const u = w / 480;
   const deck = h * 0.8;
   vband(x, w, 0, deck, [[0, '#0b7fa8'], [0.5, '#16a6c6'], [1, '#52d0d4']]);

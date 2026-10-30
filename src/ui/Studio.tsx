@@ -39,7 +39,7 @@ function ToolBody({ tool }: { tool: Tool }) {
 }
 
 function StudioInner() {
-  const { doc, tool, setTool, selection, undo, redo, canUndo, canRedo, clearAll, setExportOpen } = useStudio();
+  const { doc, tool, setTool, selection, setSelection, undo, redo, canUndo, canRedo, clearAll, setExportOpen } = useStudio();
   const reduce = useReducedMotion();
   const [confirm, setConfirm] = useState(false);
   const complete = isComplete(doc);
@@ -67,15 +67,18 @@ function StudioInner() {
           <Stage />
         </div>
         <aside className="flex h-[46dvh] shrink-0 flex-col border-t border-line bg-surface md:h-auto md:w-[26rem] md:border-l md:border-t-0" aria-label="Tools">
-          <div role="tablist" aria-label="Tools" className="no-scrollbar flex shrink-0 gap-0.5 overflow-x-auto border-b border-line px-1.5 py-1.5">
+          <div role="tablist" aria-label="Tools" className="no-scrollbar flex shrink-0 gap-0 overflow-x-auto border-b border-line px-1 py-1.5">
             {TOOLS.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 role="tab"
                 aria-selected={tool === id && !showInspector}
                 aria-controls="tool-body"
-                onClick={() => { setTool(id); }}
-                className={`flex min-h-12 min-w-[3.4rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs font-semibold transition-colors ${tool === id && !showInspector ? 'bg-surface3 text-text' : 'text-muted hover:text-text'}`}
+                onClick={() => {
+                  setTool(id);
+                  if (selection?.type === 'item' || (selection?.type === 'slot' && id !== 'looks')) setSelection(null);
+                }}
+                className={`flex min-h-12 min-w-[2.9rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs font-semibold transition-colors ${tool === id && !showInspector ? 'bg-surface3 text-text' : 'text-muted hover:text-text'}`}
               >
                 <Icon size={19} aria-hidden />
                 {label}

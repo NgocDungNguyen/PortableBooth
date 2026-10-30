@@ -14,7 +14,8 @@ interface Props {
 }
 
 const HERO_LOOKS = ['sunday', 'flash', 'noir', 'cherry', 'teal-night', 'vhs', 'riso', 'dream'].filter((id) => FILTERS.some((f) => f.id === id));
-const GALLERY: { format: FormatId; frames: number; filter: string; offset: number; frame?: string; name: string }[] = [
+type Look = { format: FormatId; frames: number; filter: string; offset: number; frame?: string; name: string };
+const GALLERY: Look[] = ([
   { format: 'strip', frames: 4, filter: 'sunday', offset: 0, name: 'Sunday' },
   { format: 'instant', frames: 1, filter: 'flash', offset: 2, name: 'Flash' },
   { format: 'film35', frames: 3, filter: 'noir', offset: 1, name: 'Noir' },
@@ -23,7 +24,7 @@ const GALLERY: { format: FormatId; frames: number; filter: string; offset: numbe
   { format: 'film35', frames: 3, filter: 'tape', offset: 2, name: 'Tape' },
   { format: 'strip', frames: 4, filter: 'cyan', offset: 4, frame: 'dots', name: 'Cyan' },
   { format: 'instant', frames: 1, filter: 'dusk', offset: 5, name: 'Dusk' },
-].filter((g) => FILTERS.some((f) => f.id === g.filter));
+] as Look[]).filter((g) => FILTERS.some((f) => f.id === g.filter));
 
 const WORDMARK = (
   <a href="#home" className="flex items-center gap-2 font-display text-lg font-semibold" aria-label="PortableBooth home">
@@ -87,9 +88,9 @@ export function Home({ onStart }: Props) {
         <div className="order-1 mx-auto w-full max-w-[22rem] md:order-2">
           <div className="stage-bg relative rounded-3xl border border-line p-5 pb-4">
             <div className="mx-auto h-2.5 w-[70%] rounded-full bg-black/80 shadow-[inset_0_1px_3px_rgba(0,0,0,0.9)]" aria-hidden />
-            <button type="button" onClick={() => setPrintKey((k) => k + 1)} aria-label="Print the sample strip again" className="relative -mt-1 block w-full cursor-pointer pt-2" style={{ height: '21rem', clipPath: 'inset(0 -2rem -2rem -2rem)' }}>
+            <button type="button" onClick={() => setPrintKey((k) => k + 1)} aria-label="Print the sample strip again" className="relative -mt-1 block w-full cursor-pointer overflow-hidden pt-2" style={{ height: '23.5rem' }}>
               <div key={printKey} className={reduce ? '' : 'printing'}>
-                <FilmCanvas doc={hero} width={128} label="Sample film strip" className="mx-auto" />
+                <FilmCanvas doc={hero} width={120} label="Sample film strip" className="mx-auto" />
               </div>
             </button>
           </div>
@@ -109,14 +110,14 @@ export function Home({ onStart }: Props) {
             { Icon: Shapes, t: 'Frames', d: '12 film styles', doc: { ...previewDoc('instant', 1, 'honey', 4), frameStyle: 'holo' } },
             { Icon: Smile, t: 'Stickers', d: 'Icons, emoji, widgets', doc: decorated },
           ].map(({ Icon, t, d, doc }, i) => (
-            <motion.article key={t} initial={reduce ? false : { opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.45, delay: i * 0.06, ease: [0.2, 0.8, 0.2, 1] }} className="panel flex items-center gap-5 overflow-hidden p-5">
+            <article key={t} className="panel fade-up flex items-center gap-5 overflow-hidden p-5" style={{ animationDelay: `${i * 70}ms` }}>
               <div className="grid h-52 w-36 shrink-0 place-items-center"><FilmCanvas doc={doc} width={doc.format === 'strip' ? 70 : 96} label={`${t} example`} /></div>
               <div>
                 <Icon size={22} className="text-accent" aria-hidden />
                 <h3 className="mt-2 text-xl font-semibold">{t}</h3>
                 <p className="mt-1 text-sm text-muted">{d}</p>
               </div>
-            </motion.article>
+            </article>
           ))}
         </div>
       </section>

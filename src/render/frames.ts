@@ -485,6 +485,7 @@ function deckleOutline(W: number, H: number, ppm: number, rand: Rng): { x: numbe
       const v = lo(t * len / (5 * ppm)) * 0.4 + mid(t * len / (1.4 * ppm)) * 0.35 + hi(t * len / (0.45 * ppm)) * 0.25;
       out.push(amp * (0.18 + 0.82 * clamp01((v - 0.18) / 0.64)));
     }
+    out[0] = out[n] = amp * 0.5; // matching corners
     return out;
   };
   const top = edge(W);

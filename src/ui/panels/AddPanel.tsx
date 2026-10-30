@@ -94,7 +94,7 @@ export function AddPanel() {
           </div>
           {!loading && entries.length === 0 && <p className="label">Nothing here yet.</p>}
           {mono !== undefined && <span className="sr-only-text">{entries.length} items</span>}
-        </div>
+        </>
       )}
     </div>
   );

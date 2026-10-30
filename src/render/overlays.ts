@@ -614,8 +614,33 @@ function paper(ctx: CanvasRenderingContext2D, a: Area, r: Rng, op: number, ppm: 
   tileFill(ctx, paperTile(), a, Math.max(0.5, ppm * 0.11), r, 'soft-light', op * 0.8);
 }
 
+const dotSprites = new Map<string, HTMLCanvasElement[]>();
+/** pre-rendered dots of increasing radius; drawing sprites is far cheaper than thousands of arcs */
+function dotSet(maxR: number): HTMLCanvasElement[] {
+  const key = maxR.toFixed(1);
+  const hit = dotSprites.get(key);
+  if (hit) return hit;
+  const LEVELS = 14;
+  const size = Math.ceil(maxR * 2 + 4);
+  const set: HTMLCanvasElement[] = [];
+  for (let i = 0; i < LEVELS; i++) {
+    const c = newCanvas(size, size);
+    const x = c.getContext('2d');
+    if (x) {
+      x.fillStyle = 'rgb(22,20,34)';
+      x.beginPath();
+      x.arc(size / 2, size / 2, Math.max(0.4, maxR * Math.sqrt((i + 1) / LEVELS)), 0, TAU);
+      x.fill();
+    }
+    set.push(c);
+  }
+  if (dotSprites.size > 8) dotSprites.clear();
+  dotSprites.set(key, set);
+  return set;
+}
+
 function halftone(ctx: CanvasRenderingContext2D, a: Area, r: Rng, op: number, ppm: number) {
-  const pitch = Math.max(3.2, 0.95 * ppm);
+  const pitch = Math.max(4, 0.95 * ppm);
   const ang = Math.PI / 4;
   const ca = Math.cos(ang);
   const sa = Math.sin(ang);
@@ -627,10 +652,15 @@ function halftone(ctx: CanvasRenderingContext2D, a: Area, r: Rng, op: number, pp
   const dy = Math.sin(dirA);
   const N = Math.ceil(half / pitch) + 1;
   const maxR = pitch * 0.66;
+  const useSprites = maxR > 4.5;
+  const set = useSprites ? dotSet(maxR) : [];
+  const sz = useSprites ? set[0].width : 0;
   ctx.globalCompositeOperation = 'multiply';
   ctx.globalAlpha = op * 0.62;
-  ctx.fillStyle = 'rgb(22,20,34)';
-  ctx.beginPath();
+  if (!useSprites) {
+    ctx.fillStyle = 'rgb(22,20,34)';
+    ctx.beginPath();
+  }
   for (let j = -N; j <= N; j++) {
     for (let i = -N; i <= N; i++) {
       const lx = i * pitch;
@@ -638,16 +668,21 @@ function halftone(ctx: CanvasRenderingContext2D, a: Area, r: Rng, op: number, pp
       const x = cx + lx * ca - ly * sa;
       const y = cy + lx * sa + ly * ca;
       if (x < a.x - pitch || x > a.x + a.w + pitch || y < a.y - pitch || y > a.y + a.h + pitch) continue;
-      const lin = clamp01(((x - cx) * dx + (y - cy) * dy) / half * 0.5 + 0.5);
+      const lin = clamp01((((x - cx) * dx + (y - cy) * dy) / half) * 0.5 + 0.5);
       const rad = clamp01(Math.hypot(x - cx, y - cy) / half);
       const f = clamp01(smooth(lin) * 0.7 + smooth(rad) * 0.55 - 0.18);
-      const rr = maxR * Math.sqrt(f);
-      if (rr < 0.45) continue;
-      ctx.moveTo(x + rr, y);
-      ctx.arc(x, y, rr, 0, TAU);
+      if (f < 0.04) continue;
+      if (useSprites) {
+        const lvl = Math.min(set.length - 1, Math.floor(f * set.length));
+        ctx.drawImage(set[lvl], x - sz / 2, y - sz / 2);
+      } else {
+        const rr = maxR * Math.sqrt(f);
+        ctx.moveTo(x + rr, y);
+        ctx.arc(x, y, rr, 0, TAU);
+      }
     }
   }
-  ctx.fill();
+  if (!useSprites) ctx.fill();
 }
 
 // ---------------------------------------------------------------------------------------------
