@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react';
 import { reshape, setOrientation } from '../../film/doc';
 import { computeLayout, FORMAT_ORDER, frameOptionsFor, defaultFramesFor } from '../../film/layout';
 import type { FormatId, Orientation } from '../../film/types';
@@ -39,7 +40,7 @@ function Pictogram({ orientation }: { orientation: Orientation }) {
 }
 
 export function FilmPanel() {
-  const { doc, apply, setSelection } = useStudio();
+  const { doc, apply, setSelection, setTool } = useStudio();
   const orientation = doc.orientation ?? 'portrait';
   const options = frameOptionsFor(doc.format, orientation);
   const pick = (o: Orientation) => {
@@ -82,6 +83,11 @@ export function FilmPanel() {
           ))}
         </div>
       </Section>
+      <div className="sticky -bottom-3 z-10 -mx-4 -mb-3 mt-4 bg-surface px-4 pb-3 pt-2">
+        <button className="btn btn-primary btn-lg w-full" onClick={() => setTool('photos')}>
+          Next: add photos <ArrowRight size={18} aria-hidden />
+        </button>
+      </div>
     </div>
   );
 }

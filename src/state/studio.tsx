@@ -35,7 +35,7 @@ export const useStudio = (): Studio => {
 
 export function StudioProvider({ children }: { children: ReactNode }) {
   const [h, dispatch] = useReducer(historyReducer, undefined, () => initHistory(createDoc('strip')));
-  const [tool, setTool] = useState<Tool>('photos');
+  const [tool, setTool] = useState<Tool>('film');
   const [selection, setSelection] = useState<Selection>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -52,14 +52,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const startFrom = useCallback((format: FormatId, frames?: number, filterId?: string) => {
     dispatch({ type: 'apply', fn: (d) => ({ ...reshape(d, format, frames), ...(filterId ? { filterId } : {}) }) });
     setSelection(null);
-    setTool('photos');
+    setTool('film');
   }, []);
 
   const clearAll = useCallback(() => {
     clearPhotos();
     dispatch({ type: 'reset', doc: createDoc('strip') });
     setSelection(null);
-    setTool('photos');
+    setTool('film');
     setExportOpen(false);
   }, []);
 

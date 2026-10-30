@@ -20,7 +20,7 @@ function Router() {
   // The intro plays on every cold load of the home route (nothing is stored, so it cannot be remembered),
   // never on a #studio deep link. Home stays mounted underneath so its films render while the reel plays.
   const [intro, setIntro] = useState(() => read() === 'home');
-  const { startFrom } = useStudio();
+  const { startFrom, doc, setTool } = useStudio();
 
   useEffect(() => {
     const on = () => setRoute(read());
@@ -44,10 +44,13 @@ function Router() {
     (look?: { format: FormatId; frames?: number; filterId: string }) => {
       if (look) {
         startFrom(look.format, look.frames, look.filterId);
+      } else if (!doc.slots.some((s) => s.photoId)) {
+        // a fresh start always begins by choosing the film
+        setTool('film');
       }
       location.hash = '#studio';
     },
-    [startFrom],
+    [startFrom, doc, setTool],
   );
   const closeIntro = useCallback(() => setIntro(false), []);
   const openIntro = useCallback(() => setIntro(true), []);
