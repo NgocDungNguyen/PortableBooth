@@ -67,7 +67,7 @@ export function CameraFallback({ reason, onNative, onUpload, onRetry, onClose }:
       className="m-auto w-[min(92vw,26rem)] rounded-2xl border border-line2 bg-surface p-6 text-text shadow-[var(--shadow)] backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 text-accent" aria-hidden>
+        <div className="grid size-11 shrink-0 place-items-center rounded-full bg-surface2 text-accent" aria-hidden>
           <Camera size={22} />
         </div>
         <button className="btn btn-icon btn-ghost -mr-2 -mt-2" onClick={onClose} aria-label="Close">
