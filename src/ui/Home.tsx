@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ensureSticker } from '../assets/library';
 import { newSticker, newWidget } from '../film/doc';
 import { FILTERS } from '../film/filters';
+import { OVERLAYS } from '../render/overlays';
+import { FRAME_STYLES } from '../render/frames';
 import type { FilmDoc, FormatId } from '../film/types';
 import { FilmCanvas } from './FilmCanvas';
 import { previewDoc } from './previewDocs';
@@ -94,7 +96,7 @@ export function Home({ onStart }: Props) {
               </div>
             </button>
           </div>
-          <div role="radiogroup" aria-label="Try a look" className="no-scrollbar mt-4 flex gap-1.5 overflow-x-auto pb-1">
+          <div role="radiogroup" aria-label="Try a look" className="mt-4 flex flex-wrap gap-1.5">
             {HERO_LOOKS.map((id) => (
               <button key={id} role="radio" aria-checked={look === id} className="chip chip-tall" onClick={() => setLook(id)}>{FILTERS.find((f) => f.id === id)?.name}</button>
             ))}
@@ -106,8 +108,8 @@ export function Home({ onStart }: Props) {
         <h2 id="what" className="sr-only-text">What you can do</h2>
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { Icon: SlidersHorizontal, t: 'Looks', d: '36 filters, 16 overlays', doc: previewDoc('instant', 1, 'dream', 3) },
-            { Icon: Shapes, t: 'Frames', d: '12 film styles', doc: { ...previewDoc('instant', 1, 'honey', 4), frameStyle: 'holo' } },
+            { Icon: SlidersHorizontal, t: 'Looks', d: `${FILTERS.length - 1} filters, ${OVERLAYS.length} overlays`, doc: previewDoc('instant', 1, 'dream', 3) },
+            { Icon: Shapes, t: 'Frames', d: `${FRAME_STYLES.length} film styles`, doc: { ...previewDoc('instant', 1, 'honey', 4), frameStyle: 'holo' } },
             { Icon: Smile, t: 'Stickers', d: 'Icons, emoji, widgets', doc: decorated },
           ].map(({ Icon, t, d, doc }, i) => (
             <article key={t} className="panel fade-up flex items-center gap-5 overflow-hidden p-5" style={{ animationDelay: `${i * 70}ms` }}>
