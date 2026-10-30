@@ -67,13 +67,21 @@ export async function downloadBlob(b: ExportResult): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-export async function shareBlob(b: ExportResult): Promise<'shared' | 'unsupported' | 'cancelled'> {
-  const file = new File([b.blob], b.filename, { type: b.mime });
+export type ShareOutcome = 'shared' | 'unsupported' | 'cancelled' | 'failed';
+
+/** Hand the file to the OS share sheet (AirDrop on iPhone/Mac, Quick Share on Android, and the user's apps). */
+export async function shareBlob(b: ExportResult, text?: string): Promise<ShareOutcome> {
+  let file: File;
+  try {
+    file = new File([b.blob], b.filename, { type: b.mime });
+  } catch {
+    return 'unsupported';
+  }
   if (!navigator.canShare?.({ files: [file] })) return 'unsupported';
   try {
-    await navigator.share({ files: [file], title: 'PortableBooth' });
+    await navigator.share({ files: [file], title: 'PortableBooth', ...(text ? { text } : {}) });
     return 'shared';
-  } catch {
-    return 'cancelled';
+  } catch (e) {
+    return e instanceof DOMException && e.name === 'AbortError' ? 'cancelled' : 'failed';
   }
 }
