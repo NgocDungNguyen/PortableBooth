@@ -81,8 +81,8 @@ function Pill({ g, t, vertical, width, height }: { g: Group; t: number; vertical
     if (label === 'photobooth' && g.text.startsWith('remember')) label = 'photobooth?';
     return { ...x, label };
   });
-  // 9:16 keeps text out of the bottom 20% and the right 12% (TikTok / Reels UI).
-  const area = vertical ? { left: 64, width: width * 0.88 - 64 - 40, bottom: height * 0.2 + 70 } : { left: width * 0.1, width: width * 0.8, bottom: height * 0.075 };
+  // 9:16: centred, with equal 12% side margins (clear of the TikTok / Reels buttons on the right) and out of the bottom 20%.
+  const area = vertical ? { left: width * 0.12, width: width * 0.76, bottom: height * 0.2 + 70 } : { left: width * 0.1, width: width * 0.8, bottom: height * 0.075 };
   return (
     <div style={{ position: 'absolute', left: area.left, width: area.width, bottom: area.bottom, display: 'flex', justifyContent: 'center' }}>
       <div
